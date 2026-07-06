@@ -46,6 +46,15 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Agent Ticket Manager',
+      theme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
+        scaffoldBackgroundColor: Colors.grey[50],
+        appBarTheme: const AppBarTheme(
+          centerTitle: true,
+          elevation: 0,
+        ),
+      ),
       home: const HomeScreen(),
     );
   }
