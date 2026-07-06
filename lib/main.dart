@@ -1,0 +1,52 @@
+import 'package:flutter/material.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+
+import 'models/order.dart';
+import 'models/configuration.dart';
+import 'models/event.dart';
+import 'screens/home.dart';
+
+import 'hive/hive_boxes.dart';
+import 'hive/config_box.dart';
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Hive.initFlutter();
+
+  Hive.registerAdapter(OrderAdapter());
+  Hive.registerAdapter(ConfigurationAdapter());
+  Hive.registerAdapter(EventAdapter());
+  await Hive.openBox<Order>(HiveBoxes.orderBox);
+  await Hive.openBox<Configuration>(HiveBoxes.configBox);
+  await Hive.openBox<Event>(HiveBoxes.eventBox);
+  await Hive.openBox(ConfigBox.boxName);
+  final configBox = Hive.box<Configuration>(HiveBoxes.configBox);
+
+  if (configBox.isEmpty) {
+    configBox.add(
+      Configuration(
+        ticketPriceA: 1000,
+        refundRateA: 80,
+        commissionRateA: 0.3,
+        ticketPriceB: 23000,
+        refundRateB: 80000,
+        commissionPerPointB: 1000,
+        maxRiskMultiplier: 2,
+      ),
+    );
+  }
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Agent Ticket Manager',
+      home: const HomeScreen(),
+    );
+  }
+}
