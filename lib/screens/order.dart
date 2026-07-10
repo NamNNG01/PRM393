@@ -6,6 +6,9 @@ import '../models/order.dart';
 import 'import_order.dart';
 import 'run_engine.dart';
 import 'settings.dart';
+import '../services/risk_engine.dart';
+import '../repositories/order_repository.dart';
+import 'report.dart';
 
 class OrderScreen extends StatelessWidget {
   const OrderScreen({super.key});
@@ -83,10 +86,31 @@ class OrderScreen extends StatelessWidget {
                             tooltip: "Tính toán báo cáo",
                             icon: Icons.analytics_outlined,
                             onPressed: () {
+                              final engine = RiskEngine();
+                              final repo = OrderRepository();
+                              final orders = repo.getAll();
+
+                              final Map<Order, double> dataA = {};
+                              final Map<Order, int> dataB = {};
+
+                              for (var o in orders) {
+                                if (o.type == "A") {
+                                  dataA[o] = o.amount;
+                                } else {
+                                  dataB[o] = o.unit;
+                                }
+                              }
+
+                              final resultA = engine.processTypeA(dataA);
+                              final resultB = engine.processTypeB(dataB);
+
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => const RunEngineScreen(),
+                                  builder: (_) => ReportScreen(
+                                    resultA: resultA,
+                                    resultB: resultB,
+                                  ),
                                 ),
                               );
                             },
