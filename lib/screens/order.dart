@@ -9,10 +9,17 @@ import 'settings.dart';
 import '../services/risk_engine.dart';
 import '../repositories/order_repository.dart';
 import 'report.dart';
+import 'settlement_screen.dart';
+import '../utils/date_util.dart';
 
-class OrderScreen extends StatelessWidget {
+class OrderScreen extends StatefulWidget {
   const OrderScreen({super.key});
 
+  @override
+  State<OrderScreen> createState() => _OrderScreenState();
+}
+
+class _OrderScreenState extends State<OrderScreen> {
   String _formatNumber(num value) {
     final digits = value.toStringAsFixed(0);
     final buffer = StringBuffer();
@@ -51,7 +58,7 @@ class OrderScreen extends StatelessWidget {
                 end: Alignment.bottomRight,
                 colors: [
                   colorScheme.primary,
-                  colorScheme.primary.withValues(alpha: 0.8),
+                  colorScheme.primary.withOpacity(0.8),
                 ],
               ),
             ),
@@ -63,13 +70,14 @@ class OrderScreen extends StatelessWidget {
                   alignment: Alignment.center,
                   children: [
                     Text(
-                      "Orders",
+                      "Orders (${DateUtil.today()})",
                       style: TextStyle(
+                        color: colorScheme.onPrimary,
                         fontWeight: FontWeight.bold,
                         fontSize: 20,
-                        color: colorScheme.onPrimary,
                       ),
                     ),
+
                     Positioned(
                       left: 4,
                       child: _AppBarIconButton(
@@ -78,22 +86,50 @@ class OrderScreen extends StatelessWidget {
                         onPressed: () => Navigator.pop(context),
                       ),
                     ),
+
                     Positioned(
                       right: 4,
                       child: Row(
                         children: [
-                          _AppBarIconButton(
-                            tooltip: "Tính toán báo cáo",
-                            icon: Icons.analytics_outlined,
-                            onPressed: () {
+                          /// CHỌN NGÀY
+                          IconButton(
+                            tooltip: "Chọn ngày",
+                            icon: const Icon(
+                              Icons.calendar_month,
+                              color: Colors.white,
+                            ),
+                            onPressed: () async {
+                              final picked = await showDatePicker(
+                                context: context,
+                                initialDate: DateUtil.selectedDate,
+                                firstDate: DateTime(2024),
+                                lastDate: DateTime(2035),
+                              );
+
+                              if (picked != null) {
+                                setState(() {
+                                  DateUtil.selectedDate = picked;
+                                });
+                              }
+                            },
+                          ),
+
+                          PopupMenuButton<String>(
+                            icon: const Icon(
+                              Icons.analytics_outlined,
+                              color: Colors.white,
+                            ),
+                            onSelected: (value) {
                               final engine = RiskEngine();
                               final repo = OrderRepository();
-                              final orders = repo.getAll();
+
+                              /// chỉ lấy đơn của ngày đang chọn
+                              final orders = repo.getTodayOrders();
 
                               final Map<Order, double> dataA = {};
                               final Map<Order, int> dataB = {};
 
-                              for (var o in orders) {
+                              for (final o in orders) {
                                 if (o.type == "A") {
                                   dataA[o] = o.amount;
                                 } else {
@@ -104,18 +140,42 @@ class OrderScreen extends StatelessWidget {
                               final resultA = engine.processTypeA(dataA);
                               final resultB = engine.processTypeB(dataB);
 
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => ReportScreen(
-                                    resultA: resultA,
-                                    resultB: resultB,
+                              if (value == "report") {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => ReportScreen(
+                                      resultA: resultA,
+                                      resultB: resultB,
+                                    ),
                                   ),
-                                ),
-                              );
+                                );
+                              } else {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => SettlementScreen(
+                                      resultA: resultA,
+                                      resultB: resultB,
+                                    ),
+                                  ),
+                                );
+                              }
                             },
+                            itemBuilder: (_) => const [
+                              PopupMenuItem(
+                                value: "report",
+                                child: Text("📊 Báo cáo tài chính"),
+                              ),
+                              PopupMenuItem(
+                                value: "settlement",
+                                child: Text("💰 Tính bồi hoàn"),
+                              ),
+                            ],
                           ),
+
                           const SizedBox(width: 8),
+
                           _AppBarIconButton(
                             tooltip: "Cài đặt",
                             icon: Icons.settings_outlined,
@@ -138,7 +198,6 @@ class OrderScreen extends StatelessWidget {
           ),
         ),
       ),
-
       body: ValueListenableBuilder(
         valueListenable: Hive.box<Order>(HiveBoxes.orderBox).listenable(),
         builder: (context, box, _) {
@@ -174,8 +233,8 @@ class OrderScreen extends StatelessWidget {
                       "Chưa có đơn hàng nào",
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -211,8 +270,10 @@ class OrderScreen extends StatelessWidget {
             );
           }
 
-          final typeACount = box.values.where((o) => o.type == "A").length;
-          final typeBCount = box.values.where((o) => o.type == "B").length;
+          final orders = OrderRepository().getTodayOrders();
+
+          final typeACount = orders.where((e) => e.type == "A").length;
+          final typeBCount = orders.where((e) => e.type == "B").length;
 
           return Column(
             children: [
@@ -223,7 +284,7 @@ class OrderScreen extends StatelessWidget {
                     Expanded(
                       child: _StatCard(
                         label: "Tổng đơn hàng",
-                        value: "${box.length}",
+                        value: "${orders.length}",
                         icon: Icons.receipt_long_outlined,
                         color: colorScheme.primary,
                       ),
@@ -249,12 +310,14 @@ class OrderScreen extends StatelessWidget {
                   ],
                 ),
               ),
+
               Expanded(
                 child: ListView.builder(
                   padding: const EdgeInsets.fromLTRB(0, 8, 0, 88),
-                  itemCount: box.length,
+                  itemCount: orders.length,
                   itemBuilder: (context, index) {
-                    final order = box.getAt(index)!;
+                    final order = orders[index];
+
                     final isTypeA = order.type == "A";
                     final typeColor = isTypeA ? Colors.indigo : Colors.teal;
 
@@ -285,7 +348,7 @@ class OrderScreen extends StatelessWidget {
                           ),
                         ),
                         title: Text(
-                          "Mã sản phẩm ${order.productCode}",
+                          order.productCode,
                           style: const TextStyle(fontWeight: FontWeight.w600),
                         ),
                         subtitle: Padding(
@@ -318,7 +381,7 @@ class OrderScreen extends StatelessWidget {
                             color: Colors.red[300],
                           ),
                           onPressed: () async {
-                            await box.deleteAt(index);
+                            await order.delete();
                           },
                         ),
                       ),

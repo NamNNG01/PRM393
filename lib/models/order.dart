@@ -19,11 +19,15 @@ class Order extends HiveObject {
   @HiveField(4)
   DateTime createdAt;
 
+  @HiveField(5)
+  String businessDate;
+
   Order({
     required this.productCode,
     required this.type,
     required this.amount,
     required this.unit,
     required this.createdAt,
+    required this.businessDate,
   });
 }

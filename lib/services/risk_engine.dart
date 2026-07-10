@@ -46,6 +46,8 @@ class RiskEngine {
     final commissionMoney = (totalForwarded * commissionRate).floor();
 
     final supplierPayment = totalForwarded - commissionMoney;
+
+    /// Tổng tiền đại lý thực giữ
     final cam = totalRetained + commissionMoney;
     return {
       "tongDoanhThu": totalRevenue.floor(),
