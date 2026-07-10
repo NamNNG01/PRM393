@@ -11,10 +11,11 @@ class ReportScreen extends StatefulWidget {
 }
 
 class _ReportScreenState extends State<ReportScreen> {
-  // Helper to format currency values (VNĐ)
   String _formatMoney(dynamic value) {
     if (value == null) return "0 đ";
-    final num val = value is num ? value : (double.tryParse(value.toString()) ?? 0);
+    final num val = value is num
+        ? value
+        : (double.tryParse(value.toString()) ?? 0);
     final clean = val.floor().toString();
     final buffer = StringBuffer();
     for (int i = 0; i < clean.length; i++) {
@@ -27,10 +28,11 @@ class _ReportScreenState extends State<ReportScreen> {
     return "${buffer.toString()} đ";
   }
 
-  // Helper to format point values
   String _formatPoint(dynamic value) {
     if (value == null) return "0 điểm";
-    final num val = value is num ? value : (double.tryParse(value.toString()) ?? 0);
+    final num val = value is num
+        ? value
+        : (double.tryParse(value.toString()) ?? 0);
     final clean = val.floor().toString();
     final buffer = StringBuffer();
     for (int i = 0; i < clean.length; i++) {
@@ -47,7 +49,6 @@ class _ReportScreenState extends State<ReportScreen> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    // Overview calculations
     final revA = widget.resultA["tongDoanhThu"] ?? 0;
     final revB = widget.resultB["tongDoanhThu"] ?? 0;
     final totalRevenue = revA + revB;
@@ -106,7 +107,10 @@ class _ReportScreenState extends State<ReportScreen> {
             labelColor: colorScheme.onPrimary,
             unselectedLabelColor: colorScheme.onPrimary.withValues(alpha: 0.65),
             indicatorWeight: 4.0,
-            labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            labelStyle: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
             tabs: const [
               Tab(icon: Icon(Icons.analytics_outlined), text: "Tổng quan"),
               Tab(icon: Icon(Icons.payments_outlined), text: "Vé Loại A"),
@@ -149,7 +153,6 @@ class _ReportScreenState extends State<ReportScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Dynamic Header Card
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(22),
@@ -213,7 +216,7 @@ class _ReportScreenState extends State<ReportScreen> {
             physics: const NeverScrollableScrollPhysics(),
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
-            childAspectRatio: 1.28,
+            childAspectRatio: 1.45,
             children: [
               _buildKpiCard(
                 title: "Doanh thu A + B",
@@ -243,7 +246,6 @@ class _ReportScreenState extends State<ReportScreen> {
           ),
           const SizedBox(height: 24),
 
-          // Ratio Split bar chart
           _buildRatioBar(
             retained: totalKept.toDouble(),
             forwarded: totalForwarded.toDouble(),
@@ -254,7 +256,6 @@ class _ReportScreenState extends State<ReportScreen> {
           ),
           const SizedBox(height: 24),
 
-          // Breakdown by Type
           Container(
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
@@ -322,8 +323,12 @@ class _ReportScreenState extends State<ReportScreen> {
     final num comm = res["hoa_hong"] ?? 0;
     final num netFwd = res["tongThucChuyen"] ?? 0;
     final num hold = res["cam"] ?? 0;
-    final Map<String, dynamic> retainedDetails = Map<String, dynamic>.from(res["chi_tiết_giữ_lại"] ?? {});
-    final Map<String, dynamic> forwardedDetails = Map<String, dynamic>.from(res["chi_tiết_chuyển"] ?? {});
+    final Map<String, dynamic> retainedDetails = Map<String, dynamic>.from(
+      res["chi_tiết_giữ_lại"] ?? {},
+    );
+    final Map<String, dynamic> forwardedDetails = Map<String, dynamic>.from(
+      res["chi_tiết_chuyển"] ?? {},
+    );
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -336,7 +341,7 @@ class _ReportScreenState extends State<ReportScreen> {
             physics: const NeverScrollableScrollPhysics(),
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
-            childAspectRatio: 1.28,
+            childAspectRatio: 1.45,
             children: [
               _buildKpiCard(
                 title: "Doanh thu Loại A",
@@ -398,8 +403,12 @@ class _ReportScreenState extends State<ReportScreen> {
     final num comm = res["hoa_hồng"] ?? res["hoa_hong"] ?? 0;
     final num netFwd = res["tongThucChuyen"] ?? 0;
     final num hold = res["cam"] ?? 0;
-    final Map<String, dynamic> retainedDetails = Map<String, dynamic>.from(res["chi_tiết_giữ_lại"] ?? {});
-    final Map<String, dynamic> forwardedDetails = Map<String, dynamic>.from(res["chi_tiết_chuyển"] ?? {});
+    final Map<String, dynamic> retainedDetails = Map<String, dynamic>.from(
+      res["chi_tiết_giữ_lại"] ?? {},
+    );
+    final Map<String, dynamic> forwardedDetails = Map<String, dynamic>.from(
+      res["chi_tiết_chuyển"] ?? {},
+    );
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -412,7 +421,7 @@ class _ReportScreenState extends State<ReportScreen> {
             physics: const NeverScrollableScrollPhysics(),
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
-            childAspectRatio: 1.28,
+            childAspectRatio: 1.45,
             children: [
               _buildKpiCard(
                 title: "Doanh thu Loại B",
@@ -473,7 +482,7 @@ class _ReportScreenState extends State<ReportScreen> {
     String? subtext,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -484,66 +493,63 @@ class _ReportScreenState extends State<ReportScreen> {
             offset: const Offset(0, 4),
           ),
         ],
-        border: Border.all(
-          color: baseColor.withValues(alpha: 0.12),
-          width: 1,
-        ),
+        border: Border.all(color: baseColor.withValues(alpha: 0.12), width: 1),
       ),
-      child: Stack(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Positioned(
-            right: 0,
-            top: 0,
-            child: CircleAvatar(
-              radius: 18,
-              backgroundColor: baseColor.withValues(alpha: 0.1),
-              child: Icon(icon, color: baseColor, size: 18),
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey[700],
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    value,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[700],
                   ),
-                  if (subtext != null) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      subtext,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                        fontStyle: FontStyle.italic,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ],
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: baseColor.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: baseColor, size: 14),
               ),
             ],
           ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          if (subtext != null) ...[
+            const SizedBox(height: 2),
+            Text(
+              subtext,
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.grey[600],
+                fontStyle: FontStyle.italic,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
         ],
       ),
     );
@@ -611,16 +617,12 @@ class _ReportScreenState extends State<ReportScreen> {
                     if (retainedPct > 0)
                       Expanded(
                         flex: (retainedPct * 100).round(),
-                        child: Container(
-                          color: retainedColor,
-                        ),
+                        child: Container(color: retainedColor),
                       ),
                     if (forwardedPct > 0)
                       Expanded(
                         flex: (forwardedPct * 100).round(),
-                        child: Container(
-                          color: forwardedColor,
-                        ),
+                        child: Container(color: forwardedColor),
                       ),
                   ],
                 ),
@@ -694,7 +696,11 @@ class _ReportScreenState extends State<ReportScreen> {
           collapsedShape: const Border(),
           title: Row(
             children: [
-              Icon(Icons.list_alt_rounded, color: Colors.blueGrey[700], size: 22),
+              Icon(
+                Icons.list_alt_rounded,
+                color: Colors.blueGrey[700],
+                size: 22,
+              ),
               const SizedBox(width: 8),
               Text(
                 "Chi tiết theo mã sản phẩm (${keys.length})",
@@ -723,7 +729,10 @@ class _ReportScreenState extends State<ReportScreen> {
                 child: Divider(color: Colors.grey[150]),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 child: Table(
                   columnWidths: const {
                     0: FlexColumnWidth(1.2),
@@ -738,24 +747,45 @@ class _ReportScreenState extends State<ReportScreen> {
                       ),
                       children: const [
                         Padding(
-                          padding: EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                          padding: EdgeInsets.symmetric(
+                            vertical: 10,
+                            horizontal: 8,
+                          ),
                           child: Text(
                             "Mã SP",
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.blueGrey),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: Colors.blueGrey,
+                            ),
                           ),
                         ),
                         Padding(
-                          padding: EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                          padding: EdgeInsets.symmetric(
+                            vertical: 10,
+                            horizontal: 8,
+                          ),
                           child: Text(
                             "Giữ lại",
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.blueGrey),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: Colors.blueGrey,
+                            ),
                           ),
                         ),
                         Padding(
-                          padding: EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                          padding: EdgeInsets.symmetric(
+                            vertical: 10,
+                            horizontal: 8,
+                          ),
                           child: Text(
                             "Chuyển đi",
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.blueGrey),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: Colors.blueGrey,
+                            ),
                           ),
                         ),
                       ],
@@ -767,11 +797,17 @@ class _ReportScreenState extends State<ReportScreen> {
                       return TableRow(
                         children: [
                           Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 10,
+                              horizontal: 8,
+                            ),
                             child: Align(
                               alignment: Alignment.centerLeft,
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 5,
+                                ),
                                 decoration: BoxDecoration(
                                   color: Colors.blueGrey[50],
                                   borderRadius: BorderRadius.circular(6),
@@ -788,7 +824,10 @@ class _ReportScreenState extends State<ReportScreen> {
                             ),
                           ),
                           Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 10,
+                              horizontal: 8,
+                            ),
                             child: Text(
                               isTypeA ? _formatMoney(rVal) : _formatPoint(rVal),
                               style: const TextStyle(
@@ -799,7 +838,10 @@ class _ReportScreenState extends State<ReportScreen> {
                             ),
                           ),
                           Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 10,
+                              horizontal: 8,
+                            ),
                             child: Text(
                               isTypeA ? _formatMoney(fVal) : _formatPoint(fVal),
                               style: TextStyle(
@@ -823,5 +865,3 @@ class _ReportScreenState extends State<ReportScreen> {
     );
   }
 }
-
-
