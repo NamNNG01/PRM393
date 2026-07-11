@@ -702,12 +702,16 @@ class _ReportScreenState extends State<ReportScreen> {
                 size: 22,
               ),
               const SizedBox(width: 8),
-              Text(
-                "Chi tiết theo mã sản phẩm (${keys.length})",
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: Colors.black87,
+              Expanded(
+                child: Text(
+                  "Chi tiết theo mã sản phẩm (${keys.length})",
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: Colors.black87,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
