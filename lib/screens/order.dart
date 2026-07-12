@@ -45,7 +45,7 @@ class _OrderScreenState extends State<OrderScreen> {
       backgroundColor: colorScheme.surfaceContainerLowest,
       extendBodyBehindAppBar: false,
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(kToolbarHeight + 12),
+        preferredSize: const Size.fromHeight(kToolbarHeight + 20),
         child: ClipRRect(
           borderRadius: const BorderRadius.only(
             bottomLeft: Radius.circular(28),
@@ -65,133 +65,154 @@ class _OrderScreenState extends State<OrderScreen> {
             child: SafeArea(
               bottom: false,
               child: SizedBox(
-                height: kToolbarHeight + 12,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Text(
-                      "Orders (${DateUtil.today()})",
-                      style: TextStyle(
-                        color: colorScheme.onPrimary,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
-                      ),
-                    ),
-
-                    Positioned(
-                      left: 4,
-                      child: _AppBarIconButton(
+                height: kToolbarHeight + 20,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Row(
+                    children: [
+                      _AppBarIconButton(
                         tooltip: "Quay lại",
                         icon: Icons.arrow_back,
                         onPressed: () => Navigator.pop(context),
                       ),
-                    ),
-
-                    Positioned(
-                      right: 4,
-                      child: Row(
-                        children: [
-                          /// CHỌN NGÀY
-                          IconButton(
-                            tooltip: "Chọn ngày",
-                            icon: const Icon(
-                              Icons.calendar_month,
-                              color: Colors.white,
-                            ),
-                            onPressed: () async {
-                              final picked = await showDatePicker(
-                                context: context,
-                                initialDate: DateUtil.selectedDate,
-                                firstDate: DateTime(2024),
-                                lastDate: DateTime(2035),
-                              );
-
-                              if (picked != null) {
-                                setState(() {
-                                  DateUtil.selectedDate = picked;
-                                });
-                              }
-                            },
-                          ),
-
-                          PopupMenuButton<String>(
-                            icon: const Icon(
-                              Icons.analytics_outlined,
-                              color: Colors.white,
-                            ),
-                            onSelected: (value) {
-                              final engine = RiskEngine();
-                              final repo = OrderRepository();
-
-                              /// chỉ lấy đơn của ngày đang chọn
-                              final orders = repo.getTodayOrders();
-
-                              final Map<Order, double> dataA = {};
-                              final Map<Order, int> dataB = {};
-
-                              for (final o in orders) {
-                                if (o.type == "A") {
-                                  dataA[o] = o.amount;
-                                } else {
-                                  dataB[o] = o.unit;
-                                }
-                              }
-
-                              final resultA = engine.processTypeA(dataA);
-                              final resultB = engine.processTypeB(dataB);
-
-                              if (value == "report") {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => ReportScreen(
-                                      resultA: resultA,
-                                      resultB: resultB,
-                                    ),
-                                  ),
-                                );
-                              } else {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => SettlementScreen(
-                                      resultA: resultA,
-                                      resultB: resultB,
-                                    ),
-                                  ),
-                                );
-                              }
-                            },
-                            itemBuilder: (_) => const [
-                              PopupMenuItem(
-                                value: "report",
-                                child: Text("📊 Báo cáo tài chính"),
+                      Expanded(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              "Orders",
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: colorScheme.onPrimary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
                               ),
-                              PopupMenuItem(
-                                value: "settlement",
-                                child: Text("💰 Tính bồi hoàn"),
-                              ),
-                            ],
-                          ),
-
-                          const SizedBox(width: 8),
-
-                          _AppBarIconButton(
-                            tooltip: "Cài đặt",
-                            icon: Icons.settings_outlined,
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const SettingsScreen(),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              DateUtil.today(),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: colorScheme.onPrimary.withValues(
+                                  alpha: 0.85,
                                 ),
-                              );
-                            },
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      /// CHỌN NGÀY
+                      IconButton(
+                        tooltip: "Chọn ngày",
+                        padding: const EdgeInsets.all(6),
+                        constraints: const BoxConstraints(),
+                        icon: const Icon(
+                          Icons.calendar_month,
+                          color: Colors.white,
+                          size: 22,
+                        ),
+                        onPressed: () async {
+                          final picked = await showDatePicker(
+                            context: context,
+                            initialDate: DateUtil.selectedDate,
+                            firstDate: DateTime(2024),
+                            lastDate: DateTime(2035),
+                          );
+
+                          if (picked != null) {
+                            setState(() {
+                              DateUtil.selectedDate = picked;
+                            });
+                          }
+                        },
+                      ),
+                      const SizedBox(width: 4),
+
+                      PopupMenuButton<String>(
+                        padding: const EdgeInsets.all(6),
+                        icon: const Icon(
+                          Icons.analytics_outlined,
+                          color: Colors.white,
+                          size: 22,
+                        ),
+                        onSelected: (value) {
+                          final engine = RiskEngine();
+                          final repo = OrderRepository();
+
+                          /// chỉ lấy đơn của ngày đang chọn
+                          final orders = repo.getTodayOrders();
+
+                          final Map<Order, double> dataA = {};
+                          final Map<Order, int> dataB = {};
+
+                          for (final o in orders) {
+                            if (o.type == "A") {
+                              dataA[o] = o.amount;
+                            } else {
+                              dataB[o] = o.unit;
+                            }
+                          }
+
+                          final resultA = engine.processTypeA(dataA);
+                          final resultB = engine.processTypeB(dataB);
+
+                          if (value == "report") {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ReportScreen(
+                                  resultA: resultA,
+                                  resultB: resultB,
+                                ),
+                              ),
+                            );
+                          } else {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => SettlementScreen(
+                                  resultA: resultA,
+                                  resultB: resultB,
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                        itemBuilder: (_) => const [
+                          PopupMenuItem(
+                            value: "report",
+                            child: Text("📊 Báo cáo tài chính"),
+                          ),
+                          PopupMenuItem(
+                            value: "settlement",
+                            child: Text("💰 Tính bồi hoàn"),
                           ),
                         ],
                       ),
-                    ),
-                  ],
+
+                      const SizedBox(width: 4),
+
+                      _AppBarIconButton(
+                        tooltip: "Cài đặt",
+                        icon: Icons.settings_outlined,
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const SettingsScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(width: 2),
+                    ],
+                  ),
                 ),
               ),
             ),
