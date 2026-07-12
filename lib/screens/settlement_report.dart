@@ -144,7 +144,7 @@ class SettlementReportScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        _formatMoney(result["remaining"]),
+                        _formatMoney(result["remaining"] * 1000),
                         style: TextStyle(
                           fontSize: 26,
                           fontWeight: FontWeight.w900,
@@ -174,12 +174,12 @@ class SettlementReportScreen extends StatelessWidget {
                 _row(
                   type == "A" ? "Số lượng giữ lại" : "Số điểm giữ lại",
                   type == "A"
-                      ? "${result["retained"]} vé"
+                      ? "${_formatMoney(result["retained"] * 1000)}"
                       : "${result["retained"]} điểm",
                 ),
                 if (type == "B")
                   _row("Giá bán / điểm", _formatMoney(result["ticketPrice"])),
-                _row("Đơn giá bồi hoàn", _formatMoney(result["refundRate"])),
+                _row("Tỉ lệ bồi hoàn", "${result["refundRate"]}"),
 
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 8),
@@ -190,11 +190,11 @@ class SettlementReportScreen extends StatelessWidget {
                 _sectionHeader("Chi tiết tài chính"),
                 _row(
                   "Tổng tiền ban đầu (giữ + hồng)",
-                  _formatMoney(result["totalRetained"]),
+                  _formatMoney(result["totalRetained"] * 1000),
                 ),
                 _row(
                   "Tiền phải bồi hoàn",
-                  _formatMoney(result["refundMoney"]),
+                  _formatMoney(result["refundMoney"] * 1000),
                   valueColor: Colors.red[700],
                 ),
 
@@ -205,7 +205,7 @@ class SettlementReportScreen extends StatelessWidget {
 
                 _row(
                   "Còn lại (Sau bồi hoàn)",
-                  _formatMoney(result["remaining"]),
+                  _formatMoney(result["remaining"] * 1000),
                   isHighlight: true,
                   valueColor: isProfit ? Colors.green[700] : Colors.red[700],
                 ),
