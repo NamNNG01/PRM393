@@ -49,28 +49,31 @@ class _ReportScreenState extends State<ReportScreen> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    final revA = widget.resultA["tongDoanhThu"] ?? 0;
-    final revB = widget.resultB["tongDoanhThu"] ?? 0;
+    final revA = widget.resultA["tongDoanhThu"] * 1000 ?? 0;
+    final revB = widget.resultB["tongDoanhThu"] * 1000 ?? 0;
     final totalRevenue = revA + revB;
 
-    final keptA = widget.resultA["tongGiuLai"] ?? 0;
-    final keptB = widget.resultB["tongGiuLai"] ?? 0;
+    final keptA = widget.resultA["tongGiuLai"] * 1000 ?? 0;
+    final keptB = widget.resultB["tongGiuLai"] * 1000 ?? 0;
     final totalKept = keptA + keptB;
 
-    final fwdA = widget.resultA["tongChuyen"] ?? 0;
-    final fwdB = widget.resultB["tongChuyen"] ?? 0;
+    final fwdA = widget.resultA["tongChuyen"] * 1000 ?? 0;
+    final fwdB = widget.resultB["tongChuyen"] * 1000 ?? 0;
     final totalForwarded = fwdA + fwdB;
 
-    final commA = widget.resultA["hoa_hong"] ?? 0;
-    final commB = widget.resultB["hoa_hồng"] ?? widget.resultB["hoa_hong"] ?? 0;
+    final commA = widget.resultA["hoa_hong"] * 1000 ?? 0;
+    final commB =
+        widget.resultB["hoa_hồng"] * 1000 ??
+        widget.resultB["hoa_hong"] * 1000 ??
+        0;
     final totalCommission = commA + commB;
 
-    final netFwdA = widget.resultA["tongThucChuyen"] ?? 0;
-    final netFwdB = widget.resultB["tongThucChuyen"] ?? 0;
+    final netFwdA = widget.resultA["tongThucChuyen"] * 1000 ?? 0;
+    final netFwdB = widget.resultB["tongThucChuyen"] * 1000 ?? 0;
     final totalNetForwarded = netFwdA + netFwdB;
 
-    final holdA = widget.resultA["cam"] ?? 0;
-    final holdB = widget.resultB["cam"] ?? 0;
+    final holdA = widget.resultA["cam"] * 1000 ?? 0;
+    final holdB = widget.resultB["cam"] * 1000 ?? 0;
     final totalHold = holdA + holdB;
 
     return DefaultTabController(
@@ -231,13 +234,13 @@ class _ReportScreenState extends State<ReportScreen> {
                 baseColor: Colors.orange,
               ),
               _buildKpiCard(
-                title: "Tổng hoa hồng",
+                title: "Hoa hồng",
                 value: _formatMoney(totalCommission),
                 icon: Icons.percent_outlined,
                 baseColor: Colors.teal,
               ),
               _buildKpiCard(
-                title: "Tổng giữ lại",
+                title: "Giữ lại",
                 value: _formatMoney(totalKept),
                 icon: Icons.security_outlined,
                 baseColor: Colors.indigo,
@@ -316,13 +319,13 @@ class _ReportScreenState extends State<ReportScreen> {
 
   Widget _buildTypeATab(ColorScheme colorScheme) {
     final res = widget.resultA;
-    final num revenue = res["tongDoanhThu"] ?? 0;
-    final num keptLimit = res["giaGiuMoiCon"] ?? 0;
-    final num totalKept = res["tongGiuLai"] ?? 0;
-    final num totalFwd = res["tongChuyen"] ?? 0;
-    final num comm = res["hoa_hong"] ?? 0;
-    final num netFwd = res["tongThucChuyen"] ?? 0;
-    final num hold = res["cam"] ?? 0;
+    final num revenue = res["tongDoanhThu"] * 1000 ?? 0;
+    final num keptLimit = res["giaGiuMoiCon"] * 1000 ?? 0;
+    final num totalKept = res["tongGiuLai"] * 1000 ?? 0;
+    final num totalFwd = res["tongChuyen"] * 1000 ?? 0;
+    final num comm = res["hoa_hong"] * 1000 ?? 0;
+    final num netFwd = res["tongThucChuyen"] * 1000 ?? 0;
+    final num hold = res["cam"] * 1000 ?? 0;
     final Map<String, dynamic> retainedDetails = Map<String, dynamic>.from(
       res["chi_tiết_giữ_lại"] ?? {},
     );
@@ -396,13 +399,13 @@ class _ReportScreenState extends State<ReportScreen> {
 
   Widget _buildTypeBTab(ColorScheme colorScheme) {
     final res = widget.resultB;
-    final num revenue = res["tongDoanhThu"] ?? 0;
-    final num keptLimit = res["giaGiuMoiCon"] ?? 0;
-    final num totalKept = res["tongGiuLai"] ?? 0;
-    final num totalFwd = res["tongChuyen"] ?? 0;
-    final num comm = res["hoa_hồng"] ?? res["hoa_hong"] ?? 0;
-    final num netFwd = res["tongThucChuyen"] ?? 0;
-    final num hold = res["cam"] ?? 0;
+    final num revenue = res["tongDoanhThu"] * 1000 ?? 0;
+    final num keptLimit = res["giaGiuMoiCon"] * 1000 ?? 0;
+    final num totalKept = res["tongGiuLai"] * 1000 ?? 0;
+    final num totalFwd = res["tongChuyen"] * 1000 ?? 0;
+    final num comm = res["hoa_hồng"] * 1000 ?? res["hoa_hong"] * 1000 ?? 0;
+    final num netFwd = res["tongThucChuyen"] * 1000 ?? 0;
+    final num hold = res["cam"] * 1000 ?? 0;
     final Map<String, dynamic> retainedDetails = Map<String, dynamic>.from(
       res["chi_tiết_giữ_lại"] ?? {},
     );
@@ -791,8 +794,8 @@ class _ReportScreenState extends State<ReportScreen> {
                       ],
                     ),
                     ...keys.map((key) {
-                      final rVal = retained[key] ?? 0;
-                      final fVal = forwarded[key] ?? 0;
+                      final rVal = retained[key] * 1000 ?? 0;
+                      final fVal = forwarded[key] * 1000 ?? 0;
 
                       return TableRow(
                         children: [

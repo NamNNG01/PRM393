@@ -39,13 +39,13 @@ class SettlementReportScreen extends StatelessWidget {
                   result["type"] == "A"
                       ? "Đại lý đã giữ"
                       : "Đại lý đã giữ (điểm)",
-                  result["retained"],
+                  result["retained"] * 1000,
                 ),
 
                 if (result["type"] == "B")
                   _row("Giá bán / điểm", _money(result["ticketPrice"])),
 
-                _row("Tỷ lệ bồi hoàn", _money(result["refundRate"])),
+                _row("Tỷ lệ bồi hoàn", (result["refundRate"])),
 
                 if (result["type"] == "B") _row("Hệ số", result["multiplier"]),
 
@@ -53,14 +53,17 @@ class SettlementReportScreen extends StatelessWidget {
 
                 _row(
                   "Tổng tiền đại lí cầm (hoa hồng + tổng giữ lại)",
-                  _money(result["totalRetained"]),
+                  _money(result["totalRetained"] * 1000),
                 ),
 
-                _row("Tiền phải bồi hoàn", _money(result["refundMoney"])),
+                _row(
+                  "Tiền phải bồi hoàn",
+                  _money(result["refundMoney"] * 1000),
+                ),
 
                 const Divider(),
 
-                _row("Sau bồi hoàn", _money(result["remaining"])),
+                _row("Sau bồi hoàn", _money(result["remaining"] * 1000)),
 
                 const SizedBox(height: 30),
 
