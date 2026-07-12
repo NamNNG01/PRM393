@@ -1,4 +1,3 @@
-import '../models/order.dart';
 
 class OrderParser {
   static Map<String, double> parseInput(String input) {
