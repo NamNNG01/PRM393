@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-
+import 'package:flutter/services.dart';
 import '../hive/hive_boxes.dart';
 import '../models/order.dart';
 import 'import_order.dart';
@@ -38,6 +38,52 @@ class _OrderScreenState extends State<OrderScreen> {
     }
 
     return isNegative ? '-${buffer.toString()}' : buffer.toString();
+  }
+
+  String _buildExportText(Map<String, num> grouped) {
+    final buffer = StringBuffer();
+
+    buffer.writeln("${DateUtil.today()}");
+    buffer.writeln("");
+
+    final sorted = grouped.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+
+    num total = 0;
+
+    for (final e in sorted) {
+      buffer.writeln("${e.key.padRight(10)} ${_formatNumber(e.value)}");
+
+      total += e.value;
+    }
+
+    buffer.writeln("");
+    buffer.writeln("══════════════");
+    buffer.writeln("TỔNG: ${_formatNumber(total)}");
+
+    return buffer.toString();
+  }
+
+  Future<void> _copyOrders() async {
+    final orders = OrderRepository().getTodayOrders();
+
+    final grouped = <String, num>{};
+
+    for (final o in orders) {
+      final value = o.type == "A" ? o.amount : o.unit.toDouble();
+
+      grouped[o.productCode] = (grouped[o.productCode] ?? 0) + value;
+    }
+
+    final text = _buildExportText(grouped);
+
+    await Clipboard.setData(ClipboardData(text: text));
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text("✅ Đã lưu vào bộ nhớ tạm")));
   }
 
   @override
@@ -330,6 +376,7 @@ class _OrderScreenState extends State<OrderScreen> {
                 }
               }
               final transferToUpper = totalAmountA - totalCommission;
+              final exportGrouped = grouped;
               final typeACount = orders.where((e) => e.type == "A").length;
               final typeBCount = orders.where((e) => e.type == "B").length;
 
@@ -412,53 +459,106 @@ class _OrderScreenState extends State<OrderScreen> {
         },
       ),
 
-      floatingActionButton: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(28),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [colorScheme.primary, colorScheme.tertiary],
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: colorScheme.primary.withValues(alpha: 0.4),
-              blurRadius: 14,
-              offset: const Offset(0, 6),
+      floatingActionButton: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(28),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [colorScheme.primary, colorScheme.tertiary],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: colorScheme.primary.withValues(alpha: 0.4),
+                  blurRadius: 14,
+                  offset: const Offset(0, 6),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: Material(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(28),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(28),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ImportOrderScreen()),
-              );
-            },
-            child: const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 22, vertical: 16),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.add, color: Colors.white),
-                  SizedBox(width: 8),
-                  Text(
-                    "Import",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
+            child: Material(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(28),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(28),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const ImportOrderScreen(),
                     ),
+                  );
+                },
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 22, vertical: 16),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.add, color: Colors.white),
+                      SizedBox(width: 8),
+                      Text(
+                        "Import",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
-        ),
+
+          const SizedBox(width: 12),
+
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(28),
+              gradient: const LinearGradient(
+                colors: [Colors.green, Colors.teal],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.green.withValues(alpha: 0.35),
+                  blurRadius: 14,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(28),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(28),
+                onTap: () {
+                  _copyOrders();
+                },
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 22, vertical: 16),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.copy, color: Colors.white),
+                      SizedBox(width: 8),
+                      Text(
+                        "Xuất dữ liệu",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
