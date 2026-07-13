@@ -11,6 +11,7 @@ import 'report.dart';
 import 'settlement_screen.dart';
 import '../utils/date_util.dart';
 import '../repositories/customer_repository.dart';
+import '../models/customer.dart';
 import '../models/configuration.dart';
 import '../services/config_service.dart';
 
@@ -24,58 +25,101 @@ class OrderScreen extends StatefulWidget {
 class _OrderScreenState extends State<OrderScreen> {
   final configBox = Hive.box<Configuration>(HiveBoxes.configBox);
   String _formatNumber(num value) {
-    final digits = value.toStringAsFixed(0);
+    final money = (value * 1000).round();
+
+    final digits = money.toString();
     final buffer = StringBuffer();
+
     final isNegative = digits.startsWith('-');
     final clean = isNegative ? digits.substring(1) : digits;
 
     for (int i = 0; i < clean.length; i++) {
       final posFromEnd = clean.length - i;
+
       buffer.write(clean[i]);
+
       if (posFromEnd > 1 && posFromEnd % 3 == 1) {
         buffer.write('.');
       }
     }
 
-    return isNegative ? '-${buffer.toString()}' : buffer.toString();
+    final result = isNegative ? '-${buffer.toString()}' : buffer.toString();
+
+    return '$resultđ';
   }
 
-  String _buildExportText(Map<String, num> grouped) {
+  String _buildExportText(List<Order> orders, Configuration config) {
+    final typeA = <String, double>{};
+    final typeB = <String, int>{};
+
+    for (final o in orders) {
+      if (o.type == "A") {
+        typeA[o.productCode] = (typeA[o.productCode] ?? 0) + o.amount;
+      } else {
+        typeB[o.productCode] = (typeB[o.productCode] ?? 0) + o.unit;
+      }
+    }
+
     final buffer = StringBuffer();
 
-    buffer.writeln("${DateUtil.today()}");
+    final now = DateUtil.selectedDate;
+
+    final dateText =
+        "${now.day.toString().padLeft(2, '0')}-"
+        "${now.month.toString().padLeft(2, '0')}-"
+        "${(now.year % 100).toString().padLeft(2, '0')}";
+
+    buffer.writeln(" $dateText");
     buffer.writeln("");
 
-    final sorted = grouped.entries.toList()
-      ..sort((a, b) => a.key.compareTo(b.key));
+    buffer.writeln("LOẠI A");
+    buffer.writeln("");
 
-    num total = 0;
+    double totalA = 0;
 
-    for (final e in sorted) {
-      buffer.writeln("${e.key.padRight(10)} ${_formatNumber(e.value)}");
+    for (final e in typeA.entries) {
+      totalA += e.value;
 
-      total += e.value;
+      buffer.writeln("${e.key} : ${_formatNumber(e.value)}");
     }
 
     buffer.writeln("");
+    buffer.writeln("Tổng A: ${_formatNumber(totalA)}");
+
+    buffer.writeln("");
+    buffer.writeln("LOẠI B");
+    buffer.writeln("");
+
+    int totalPointB = 0;
+    double totalMoneyB = 0;
+
+    for (final e in typeB.entries) {
+      totalPointB += e.value;
+
+      final money = e.value * config.ticketPriceB;
+
+      totalMoneyB += money;
+
+      buffer.writeln("${e.key} : ${e.value} điểm (${_formatNumber(money)})");
+    }
+
+    buffer.writeln("");
+    buffer.writeln("Tổng B: $totalPointB điểm (${_formatNumber(totalMoneyB)})");
+
+    buffer.writeln("");
     buffer.writeln("══════════════");
-    buffer.writeln("TỔNG: ${_formatNumber(total)}");
+
+    buffer.writeln("TỔNG DOANH THU: ${_formatNumber(totalA + totalMoneyB)}");
 
     return buffer.toString();
   }
 
   Future<void> _copyOrders() async {
+    final config = ConfigService().getConfig();
+
     final orders = OrderRepository().getTodayOrders();
 
-    final grouped = <String, num>{};
-
-    for (final o in orders) {
-      final value = o.type == "A" ? o.amount : o.unit.toDouble();
-
-      grouped[o.productCode] = (grouped[o.productCode] ?? 0) + value;
-    }
-
-    final text = _buildExportText(grouped);
+    final text = _buildExportText(orders, config);
 
     await Clipboard.setData(ClipboardData(text: text));
 
@@ -83,7 +127,7 @@ class _OrderScreenState extends State<OrderScreen> {
 
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text("✅ Đã lưu vào bộ nhớ tạm")));
+    ).showSnackBar(const SnackBar(content: Text(" Đã lưu vào bộ nhớ tạm")));
   }
 
   @override
@@ -129,7 +173,7 @@ class _OrderScreenState extends State<OrderScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              "Orders",
+                              "Đơn hàng",
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               textAlign: TextAlign.center,
@@ -184,6 +228,7 @@ class _OrderScreenState extends State<OrderScreen> {
                       const SizedBox(width: 4),
 
                       PopupMenuButton<String>(
+                        tooltip: "Báo cáo & bồi hoàn",
                         padding: const EdgeInsets.all(6),
                         icon: const Icon(
                           Icons.analytics_outlined,
@@ -333,7 +378,7 @@ class _OrderScreenState extends State<OrderScreen> {
                               );
                             },
                             icon: const Icon(Icons.add),
-                            label: const Text("Import đơn hàng"),
+                            label: const Text("Nhập đơn hàng"),
                             style: ElevatedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 20,
@@ -352,30 +397,33 @@ class _OrderScreenState extends State<OrderScreen> {
               final config = ConfigService().getConfig();
               double totalCommission = 0;
               final orders = OrderRepository().getTodayOrders();
-              final grouped = <String, num>{};
-
               double totalRevenue = 0;
 
               double totalAmountA = 0;
-              int totalPointB = 0;
+              double totalAmountB = 0;
+              final grouped = <String, num>{};
 
               for (final o in orders) {
-                final value = o.type == "A" ? o.amount : o.unit.toDouble();
+                final revenueValue = o.type == "A"
+                    ? o.amount
+                    : o.unit * config.ticketPriceB;
 
-                grouped[o.productCode] = (grouped[o.productCode] ?? 0) + value;
-                totalRevenue += value; // <-- thêm dòng này
+                totalRevenue += revenueValue;
+
+                final groupKey = "${o.type}|${o.productCode}";
+
+                grouped[groupKey] = (grouped[groupKey] ?? 0) + revenueValue;
 
                 if (o.type == "A") {
                   totalAmountA += o.amount;
-
                   totalCommission += o.amount * config.commissionRateA;
                 } else {
-                  totalPointB += o.unit;
-
+                  totalAmountB += o.unit * config.ticketPriceB;
                   totalCommission += o.unit * config.commissionPerPointB;
                 }
               }
-              final transferToUpper = totalAmountA - totalCommission;
+              final transferToUpper =
+                  totalAmountA + totalAmountB - totalCommission;
               final exportGrouped = grouped;
               final typeACount = orders.where((e) => e.type == "A").length;
               final typeBCount = orders.where((e) => e.type == "B").length;
@@ -545,7 +593,7 @@ class _OrderScreenState extends State<OrderScreen> {
                       Icon(Icons.copy, color: Colors.white),
                       SizedBox(width: 8),
                       Text(
-                        "Xuất dữ liệu",
+                        "Copy",
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -564,7 +612,7 @@ class _OrderScreenState extends State<OrderScreen> {
   }
 }
 
-class _OverviewTab extends StatelessWidget {
+class _OverviewTab extends StatefulWidget {
   final Map<String, num> grouped;
 
   final double totalRevenue;
@@ -582,7 +630,21 @@ class _OverviewTab extends StatelessWidget {
   });
 
   @override
+  State<_OverviewTab> createState() => _OverviewTabState();
+}
+
+class _OverviewTabState extends State<_OverviewTab> {
+  static const String _all = "__all__";
+  String selectedCode = _all;
+
+  @override
   Widget build(BuildContext context) {
+    final codes = widget.grouped.keys.toList()..sort();
+
+    final filteredEntries = widget.grouped.entries
+        .where((e) => selectedCode == _all || e.key == selectedCode)
+        .toList();
+
     return ListView(
       padding: const EdgeInsets.only(bottom: 90),
       children: [
@@ -592,36 +654,72 @@ class _OverviewTab extends StatelessWidget {
             children: [
               _MoneyCard(
                 title: "Tổng doanh thu",
-                value: formatNumber(totalRevenue),
+                value: widget.formatNumber(widget.totalRevenue),
               ),
 
-              _MoneyCard(title: "Hoa hồng", value: formatNumber(commission)),
+              _MoneyCard(
+                title: "Hoa hồng",
+                value: widget.formatNumber(widget.commission),
+              ),
 
               _MoneyCard(
                 title: "Thực chuyển cấp trên",
-                value: formatNumber(transferToUpper),
+                value: widget.formatNumber(widget.transferToUpper),
               ),
             ],
           ),
         ),
 
-        const Divider(),
-
-        ...grouped.entries.map(
-          (e) => ListTile(
-            title: Text(
-              e.key,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: DropdownButtonFormField<String>(
+            initialValue: selectedCode,
+            decoration: InputDecoration(
+              isDense: true,
+              labelText: "Lọc theo mã sản phẩm",
+              prefixIcon: const Icon(Icons.filter_alt_outlined, size: 20),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
             ),
-            trailing: Text(formatNumber(e.value)),
+            items: [
+              const DropdownMenuItem(value: _all, child: Text("Tất cả")),
+              ...codes.map((c) => DropdownMenuItem(value: c, child: Text(c))),
+            ],
+            onChanged: (v) => setState(() => selectedCode = v ?? _all),
           ),
         ),
+
+        const Divider(),
+
+        if (filteredEntries.isEmpty)
+          const Padding(
+            padding: EdgeInsets.all(24),
+            child: Center(child: Text("Không tìm thấy mã sản phẩm")),
+          )
+        else
+          ...filteredEntries.map((e) {
+            final parts = e.key.split('|');
+
+            final type = parts[0];
+            final code = parts[1];
+
+            return ListTile(
+              title: Text(
+                code,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              subtitle: Text("Loại $type"),
+              trailing: Text(widget.formatNumber(e.value)),
+            );
+          }),
       ],
     );
   }
 }
 
-class _DetailTab extends StatelessWidget {
+class _DetailTab extends StatefulWidget {
   final List<Order> orders;
 
   final String Function(num) formatNumber;
@@ -629,44 +727,176 @@ class _DetailTab extends StatelessWidget {
   const _DetailTab({required this.orders, required this.formatNumber});
 
   @override
+  State<_DetailTab> createState() => _DetailTabState();
+}
+
+class _DetailTabState extends State<_DetailTab> {
+  static const String _all = "__all__";
+  final customerRepo = CustomerRepository();
+  String selectedCustomerId = _all;
+  String selectedCode = _all;
+
+  String _two(int n) => n.toString().padLeft(2, '0');
+
+  String _formatDateTime(DateTime dt) {
+    return "${_two(dt.day)}/${_two(dt.month)}/${dt.year} "
+        "${_two(dt.hour)}:${_two(dt.minute)}";
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final customerRepo = CustomerRepository();
+    final config = ConfigService().getConfig();
+    final codes = widget.orders.map((o) => o.productCode).toSet().toList()
+      ..sort();
 
-    return ListView.builder(
-      padding: const EdgeInsets.only(bottom: 90),
-      itemCount: orders.length,
-      itemBuilder: (context, index) {
-        final order = orders[index];
+    final customerIds = widget.orders.map((o) => o.customerId).toSet();
+    final customers =
+        customerIds
+            .map((id) => customerRepo.getById(id))
+            .whereType<Customer>()
+            .toList()
+          ..sort((a, b) => a.name.compareTo(b.name));
 
-        final customer = customerRepo.getById(order.customerId);
+    final filteredOrders = widget.orders.where((order) {
+      final matchCustomer =
+          selectedCustomerId == _all || order.customerId == selectedCustomerId;
+      final matchCode =
+          selectedCode == _all || order.productCode == selectedCode;
+      return matchCustomer && matchCode;
+    }).toList();
 
-        final value = order.type == "A" ? order.amount : order.unit;
-
-        return Card(
-          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          child: ListTile(
-            title: Text(order.productCode),
-
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "${customer?.name ?? "Unknown"}"
-                  " - "
-                  "${customer?.phone ?? ""}",
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+          child: DropdownButtonFormField<String>(
+            initialValue: selectedCustomerId,
+            decoration: InputDecoration(
+              isDense: true,
+              labelText: "Lọc theo khách hàng",
+              prefixIcon: const Icon(Icons.person_outline, size: 20),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+            ),
+            items: [
+              const DropdownMenuItem(value: _all, child: Text("Tất cả")),
+              ...customers.map(
+                (c) => DropdownMenuItem(
+                  value: c.id,
+                  child: Text(
+                    "${c.name} - ${c.phone}",
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-
-                Text(order.createdAt.toString()),
-              ],
-            ),
-
-            trailing: Text(
-              formatNumber(value),
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
+              ),
+            ],
+            onChanged: (v) => setState(() => selectedCustomerId = v ?? _all),
           ),
-        );
-      },
+        ),
+        Padding(
+          padding: const EdgeInsets.all(12),
+          child: DropdownButtonFormField<String>(
+            initialValue: selectedCode,
+            decoration: InputDecoration(
+              isDense: true,
+              labelText: "Lọc theo mã sản phẩm",
+              prefixIcon: const Icon(Icons.filter_alt_outlined, size: 20),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+            ),
+            items: [
+              const DropdownMenuItem(value: _all, child: Text("Tất cả")),
+              ...codes.map((c) => DropdownMenuItem(value: c, child: Text(c))),
+            ],
+            onChanged: (v) => setState(() => selectedCode = v ?? _all),
+          ),
+        ),
+        Expanded(
+          child: filteredOrders.isEmpty
+              ? const Center(child: Text("Không tìm thấy kết quả"))
+              : ListView.builder(
+                  padding: const EdgeInsets.only(bottom: 90),
+                  itemCount: filteredOrders.length,
+                  itemBuilder: (context, index) {
+                    final order = filteredOrders[index];
+
+                    final customer = customerRepo.getById(order.customerId);
+
+                    final value = order.type == "A"
+                        ? order.amount
+                        : order.unit * config.ticketPriceB;
+                    return Card(
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      child: ListTile(
+                        title: Text(order.productCode),
+
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "${customer?.name ?? "Không rõ"}"
+                              " - "
+                              "${customer?.phone ?? ""}",
+                            ),
+
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.access_time,
+                                  size: 13,
+                                  color: Colors.grey[600],
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  _formatDateTime(order.createdAt),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+
+                        trailing: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              order.type == "A"
+                                  ? widget.formatNumber(order.amount)
+                                  : "${order.unit} điểm",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+
+                            if (order.type == "B")
+                              Text(
+                                widget.formatNumber(
+                                  order.unit * config.ticketPriceB,
+                                ),
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ],
     );
   }
 }

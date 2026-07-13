@@ -82,7 +82,7 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                   alignment: Alignment.center,
                   children: [
                     Text(
-                      "Import Orders",
+                      "Nhập đơn hàng",
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 20,
@@ -211,7 +211,7 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                 children: [
                   Expanded(
                     child: _TypeOption(
-                      label: "Type A",
+                      label: "Loại A",
                       subtitle: "Theo số tiền",
                       icon: Icons.payments_outlined,
                       selected: selectedType == "A",
@@ -222,7 +222,7 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                   const SizedBox(width: 4),
                   Expanded(
                     child: _TypeOption(
-                      label: "Type B",
+                      label: "Loại B",
                       subtitle: "Theo điểm",
                       icon: Icons.stars_outlined,
                       selected: selectedType == "B",
@@ -402,7 +402,7 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
 
                 icon: const Icon(Icons.file_upload_outlined),
                 label: const Text(
-                  "IMPORT",
+                  "NHẬP",
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 style: ElevatedButton.styleFrom(
