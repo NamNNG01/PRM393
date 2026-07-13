@@ -1,38 +1,44 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'event.dart';
+part of 'customer.dart';
 
 // **************************************************************************
 // TypeAdapterGenerator
 // **************************************************************************
 
-class EventAdapter extends TypeAdapter<Event> {
+class CustomerAdapter extends TypeAdapter<Customer> {
   @override
-  final int typeId = 3;
+  final int typeId = 2;
 
   @override
-  Event read(BinaryReader reader) {
+  Customer read(BinaryReader reader) {
     final numOfFields = reader.readByte();
     final fields = <int, dynamic>{
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
-    return Event(
-      productCode: fields[0] as String,
-      type: fields[1] as String,
-      multiplier: fields[2] as int,
+    return Customer(
+      id: fields[0] as String,
+      name: fields[1] as String,
+      phone: fields[2] as String,
+      note: fields[3] as String,
+      createdAt: fields[4] as DateTime,
     );
   }
 
   @override
-  void write(BinaryWriter writer, Event obj) {
+  void write(BinaryWriter writer, Customer obj) {
     writer
-      ..writeByte(3)
+      ..writeByte(5)
       ..writeByte(0)
-      ..write(obj.productCode)
+      ..write(obj.id)
       ..writeByte(1)
-      ..write(obj.type)
+      ..write(obj.name)
       ..writeByte(2)
-      ..write(obj.multiplier);
+      ..write(obj.phone)
+      ..writeByte(3)
+      ..write(obj.note)
+      ..writeByte(4)
+      ..write(obj.createdAt);
   }
 
   @override
@@ -41,7 +47,7 @@ class EventAdapter extends TypeAdapter<Event> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is EventAdapter &&
+      other is CustomerAdapter &&
           runtimeType == other.runtimeType &&
           typeId == other.typeId;
 }

@@ -10,6 +10,9 @@ import '../repositories/order_repository.dart';
 import 'report.dart';
 import 'settlement_screen.dart';
 import '../utils/date_util.dart';
+import '../repositories/customer_repository.dart';
+import '../models/configuration.dart';
+import '../services/config_service.dart';
 
 class OrderScreen extends StatefulWidget {
   const OrderScreen({super.key});
@@ -19,6 +22,7 @@ class OrderScreen extends StatefulWidget {
 }
 
 class _OrderScreenState extends State<OrderScreen> {
+  final configBox = Hive.box<Configuration>(HiveBoxes.configBox);
   String _formatNumber(num value) {
     final digits = value.toStringAsFixed(0);
     final buffer = StringBuffer();
@@ -218,198 +222,192 @@ class _OrderScreenState extends State<OrderScreen> {
           ),
         ),
       ),
-      body: ValueListenableBuilder(
-        valueListenable: Hive.box<Order>(HiveBoxes.orderBox).listenable(),
-        builder: (context, box, _) {
-          if (box.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 120,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            colorScheme.primary.withValues(alpha: 0.15),
-                            colorScheme.primary.withValues(alpha: 0.05),
-                          ],
-                        ),
-                      ),
-                      child: Icon(
-                        Icons.inbox_outlined,
-                        size: 56,
-                        color: colorScheme.primary,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      "Chưa có đơn hàng nào",
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      "Bắt đầu bằng cách nhập danh sách đơn hàng loại A hoặc B",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                    ),
-                    const SizedBox(height: 28),
-                    SizedBox(
-                      height: 48,
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const ImportOrderScreen(),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.add),
-                        label: const Text("Import đơn hàng"),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
 
-          final orders = OrderRepository().getTodayOrders();
+      body: ValueListenableBuilder<Box>(
+        valueListenable: Hive.box(ConfigService.boxName).listenable(),
+        builder: (context, _, __) {
+          return ValueListenableBuilder(
+            valueListenable: Hive.box<Order>(HiveBoxes.orderBox).listenable(),
+            builder: (context, _, __) {
+              final orderBox = Hive.box<Order>(HiveBoxes.orderBox);
 
-          final typeACount = orders.where((e) => e.type == "A").length;
-          final typeBCount = orders.where((e) => e.type == "B").length;
-
-          return Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(14, 12, 14, 4),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _StatCard(
-                        label: "Tổng đơn hàng",
-                        value: "${orders.length}",
-                        icon: Icons.receipt_long_outlined,
-                        color: colorScheme.primary,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _StatCard(
-                        label: "Loại A",
-                        value: "$typeACount",
-                        icon: Icons.payments_outlined,
-                        color: Colors.indigo,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _StatCard(
-                        label: "Loại B",
-                        value: "$typeBCount",
-                        icon: Icons.stars_outlined,
-                        color: Colors.teal,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(0, 8, 0, 88),
-                  itemCount: orders.length,
-                  itemBuilder: (context, index) {
-                    final order = orders[index];
-
-                    final isTypeA = order.type == "A";
-                    final typeColor = isTypeA ? Colors.indigo : Colors.teal;
-
-                    return Card(
-                      elevation: 1,
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 6,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        leading: CircleAvatar(
-                          radius: 22,
-                          backgroundColor: typeColor.withValues(alpha: 0.15),
-                          child: Text(
-                            order.type,
-                            style: TextStyle(
-                              color: typeColor,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
+              if (orderBox.isEmpty) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 120,
+                          height: 120,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                colorScheme.primary.withValues(alpha: 0.15),
+                                colorScheme.primary.withValues(alpha: 0.05),
+                              ],
                             ),
                           ),
+                          child: Icon(
+                            Icons.inbox_outlined,
+                            size: 56,
+                            color: colorScheme.primary,
+                          ),
                         ),
-                        title: Text(
-                          order.productCode,
-                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        const SizedBox(height: 24),
+                        Text(
+                          "Chưa có đơn hàng nào",
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.w700),
                         ),
-                        subtitle: Padding(
-                          padding: const EdgeInsets.only(top: 4),
-                          child: Row(
-                            children: [
-                              Icon(
-                                isTypeA
-                                    ? Icons.payments_outlined
-                                    : Icons.stars_outlined,
-                                size: 15,
-                                color: Colors.grey[600],
-                              ),
-                              const SizedBox(width: 4),
-                              Flexible(
-                                child: Text(
-                                  isTypeA
-                                      ? "Số tiền: ${_formatNumber(order.amount)}"
-                                      : "Số điểm: ${_formatNumber(order.unit)}",
-                                  overflow: TextOverflow.ellipsis,
+                        const SizedBox(height: 8),
+                        Text(
+                          "Bắt đầu bằng cách nhập danh sách đơn hàng loại A hoặc B",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        const SizedBox(height: 28),
+                        SizedBox(
+                          height: 48,
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const ImportOrderScreen(),
                                 ),
+                              );
+                            },
+                            icon: const Icon(Icons.add),
+                            label: const Text("Import đơn hàng"),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
                               ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+              final config = ConfigService().getConfig();
+              double totalCommission = 0;
+              final orders = OrderRepository().getTodayOrders();
+              final grouped = <String, num>{};
+
+              double totalRevenue = 0;
+
+              double totalAmountA = 0;
+              int totalPointB = 0;
+
+              for (final o in orders) {
+                final value = o.type == "A" ? o.amount : o.unit.toDouble();
+
+                grouped[o.productCode] = (grouped[o.productCode] ?? 0) + value;
+                totalRevenue += value; // <-- thêm dòng này
+
+                if (o.type == "A") {
+                  totalAmountA += o.amount;
+
+                  totalCommission += o.amount * config.commissionRateA;
+                } else {
+                  totalPointB += o.unit;
+
+                  totalCommission += o.unit * config.commissionPerPointB;
+                }
+              }
+              final transferToUpper = totalAmountA - totalCommission;
+              final typeACount = orders.where((e) => e.type == "A").length;
+              final typeBCount = orders.where((e) => e.type == "B").length;
+
+              return Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 12, 14, 4),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _StatCard(
+                            label: "Tổng đơn hàng",
+                            value: "${orders.length}",
+                            icon: Icons.receipt_long_outlined,
+                            color: colorScheme.primary,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _StatCard(
+                            label: "Loại A",
+                            value: "$typeACount",
+                            icon: Icons.payments_outlined,
+                            color: Colors.indigo,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _StatCard(
+                            label: "Loại B",
+                            value: "$typeBCount",
+                            icon: Icons.stars_outlined,
+                            color: Colors.teal,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  Expanded(
+                    child: DefaultTabController(
+                      length: 2,
+                      child: Column(
+                        children: [
+                          const TabBar(
+                            tabs: [
+                              Tab(text: "Tổng quan"),
+                              Tab(text: "Chi tiết"),
                             ],
                           ),
-                        ),
-                        trailing: IconButton(
-                          tooltip: "Xóa",
-                          icon: Icon(
-                            Icons.delete_outline,
-                            color: Colors.red[300],
+
+                          Expanded(
+                            child: TabBarView(
+                              children: [
+                                /// TAB TỔNG QUAN
+                                _OverviewTab(
+                                  grouped: grouped,
+                                  totalRevenue: totalRevenue,
+                                  commission: totalCommission,
+                                  transferToUpper: transferToUpper,
+                                  formatNumber: _formatNumber,
+                                ),
+
+                                /// TAB CHI TIẾT
+                                _DetailTab(
+                                  orders: orders,
+                                  formatNumber: _formatNumber,
+                                ),
+                              ],
+                            ),
                           ),
-                          onPressed: () async {
-                            await order.delete();
-                          },
-                        ),
+                        ],
                       ),
-                    );
-                  },
-                ),
-              ),
-            ],
+                    ),
+                  ),
+                ],
+              );
+            },
           );
         },
       ),
@@ -460,6 +458,133 @@ class _OrderScreenState extends State<OrderScreen> {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _OverviewTab extends StatelessWidget {
+  final Map<String, num> grouped;
+
+  final double totalRevenue;
+  final double commission;
+  final double transferToUpper;
+
+  final String Function(num) formatNumber;
+
+  const _OverviewTab({
+    required this.grouped,
+    required this.totalRevenue,
+    required this.commission,
+    required this.transferToUpper,
+    required this.formatNumber,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.only(bottom: 90),
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            children: [
+              _MoneyCard(
+                title: "Tổng doanh thu",
+                value: formatNumber(totalRevenue),
+              ),
+
+              _MoneyCard(title: "Hoa hồng", value: formatNumber(commission)),
+
+              _MoneyCard(
+                title: "Thực chuyển cấp trên",
+                value: formatNumber(transferToUpper),
+              ),
+            ],
+          ),
+        ),
+
+        const Divider(),
+
+        ...grouped.entries.map(
+          (e) => ListTile(
+            title: Text(
+              e.key,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            trailing: Text(formatNumber(e.value)),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DetailTab extends StatelessWidget {
+  final List<Order> orders;
+
+  final String Function(num) formatNumber;
+
+  const _DetailTab({required this.orders, required this.formatNumber});
+
+  @override
+  Widget build(BuildContext context) {
+    final customerRepo = CustomerRepository();
+
+    return ListView.builder(
+      padding: const EdgeInsets.only(bottom: 90),
+      itemCount: orders.length,
+      itemBuilder: (context, index) {
+        final order = orders[index];
+
+        final customer = customerRepo.getById(order.customerId);
+
+        final value = order.type == "A" ? order.amount : order.unit;
+
+        return Card(
+          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          child: ListTile(
+            title: Text(order.productCode),
+
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "${customer?.name ?? "Unknown"}"
+                  " - "
+                  "${customer?.phone ?? ""}",
+                ),
+
+                Text(order.createdAt.toString()),
+              ],
+            ),
+
+            trailing: Text(
+              formatNumber(value),
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _MoneyCard extends StatelessWidget {
+  final String title;
+  final String value;
+
+  const _MoneyCard({required this.title, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: ListTile(
+        title: Text(title),
+        trailing: Text(
+          value,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
       ),
     );

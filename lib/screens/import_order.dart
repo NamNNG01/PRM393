@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
 import '../services/order_parser.dart';
 import '../repositories/order_repository.dart';
+import '../models/customer.dart';
+import '../repositories/customer_repository.dart';
+
+import '../models/ticket.dart';
+import '../repositories/ticket_repository.dart';
+
+import '../utils/date_util.dart';
 
 class ImportOrderScreen extends StatefulWidget {
   const ImportOrderScreen({super.key});
@@ -14,10 +21,32 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
   bool showExample = false;
 
   final TextEditingController inputController = TextEditingController();
+  final TextEditingController customerController = TextEditingController();
+
+  final customerRepo = CustomerRepository();
+
+  List<Customer> customers = [];
+
+  Customer? selectedCustomer;
+
+  bool showAddCustomer = false;
+
+  final customerNameController = TextEditingController();
+  final phoneController = TextEditingController();
+  @override
+  void initState() {
+    super.initState();
+
+    customers = customerRepo.getAll();
+  }
 
   @override
   void dispose() {
     inputController.dispose();
+
+    customerNameController.dispose();
+    phoneController.dispose();
+
     super.dispose();
   }
 
@@ -63,7 +92,10 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                     Positioned(
                       left: 4,
                       child: IconButton(
-                        icon: Icon(Icons.arrow_back, color: colorScheme.onPrimary),
+                        icon: Icon(
+                          Icons.arrow_back,
+                          color: colorScheme.onPrimary,
+                        ),
                         onPressed: () => Navigator.pop(context),
                       ),
                     ),
@@ -80,12 +112,91 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const SizedBox(height: 10),
+
+            Text(
+              "Khách hàng",
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+            ),
+
+            const SizedBox(height: 10),
+
+            if (customers.isNotEmpty && !showAddCustomer)
+              DropdownButtonFormField<Customer>(
+                initialValue: selectedCustomer,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: "Chọn khách hàng",
+                ),
+                items: customers.map((customer) {
+                  return DropdownMenuItem(
+                    value: customer,
+                    child: Text("${customer.name} - ${customer.phone}"),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    selectedCustomer = value;
+                  });
+                },
+              ),
+
+            const SizedBox(height: 10),
+
+            OutlinedButton.icon(
+              icon: Icon(showAddCustomer ? Icons.close : Icons.person_add),
+              label: Text(showAddCustomer ? "Hủy tạo khách" : "Thêm khách mới"),
+              onPressed: () {
+                setState(() {
+                  showAddCustomer = !showAddCustomer;
+
+                  if (showAddCustomer) {
+                    /// chuyển sang chế độ tạo mới
+
+                    selectedCustomer = null;
+
+                    customerNameController.clear();
+                    phoneController.clear();
+                  } else {
+                    /// quay lại dropdown
+
+                    customerNameController.clear();
+                    phoneController.clear();
+                  }
+                });
+              },
+            ),
+            if (showAddCustomer || customers.isEmpty) ...[
+              const SizedBox(height: 10),
+
+              TextField(
+                controller: customerNameController,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: "Tên khách",
+                ),
+              ),
+
+              const SizedBox(height: 10),
+
+              TextField(
+                controller: phoneController,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: "Số điện thoại",
+                ),
+              ),
+            ],
+
+            const SizedBox(height: 20),
             Text(
               "Loại đơn hàng",
-              style: Theme.of(context)
-                  .textTheme
-                  .titleSmall
-                  ?.copyWith(fontWeight: FontWeight.w600),
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 10),
 
@@ -129,10 +240,9 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
               children: [
                 Text(
                   "Danh sách đơn hàng",
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleSmall
-                      ?.copyWith(fontWeight: FontWeight.w600),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
                 ),
                 const Spacer(),
                 InkWell(
@@ -181,7 +291,11 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                 ),
                 child: const Text(
                   "68 x5000000\n72 x3000000\n68 x1000000\n\nhoặc\n\n23 x1000\n79 x500\n23 x200",
-                  style: TextStyle(fontFamily: 'monospace', fontSize: 13, height: 1.5),
+                  style: TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 13,
+                    height: 1.5,
+                  ),
                 ),
               ),
             ],
@@ -204,7 +318,8 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                   decoration: const InputDecoration(
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.all(16),
-                    hintText: "Dán hoặc nhập danh sách đơn hàng, mỗi dòng một mã...",
+                    hintText:
+                        "Dán hoặc nhập danh sách đơn hàng, mỗi dòng một mã...",
                   ),
                 ),
               ),
@@ -219,16 +334,72 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                 onPressed: () async {
                   final input = inputController.text.trim();
 
-                  if (input.isEmpty) return;
+                  if (input.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Vui lòng nhập danh sách đơn hàng"),
+                      ),
+                    );
+                    return;
+                  }
 
                   final parsed = OrderParser.parseInput(input);
+                  final totalValue = parsed.values.fold<num>(
+                    0,
+                    (a, b) => a + b,
+                  );
+                  final customerRepo = CustomerRepository();
 
-                  await OrderRepository().importOrders(parsed, selectedType);
+                  Customer customer;
+
+                  /// chế độ tạo khách mới
+                  if (showAddCustomer || customers.isEmpty) {
+                    final name = customerNameController.text.trim();
+
+                    if (name.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Nhập tên khách hàng")),
+                      );
+                      return;
+                    }
+
+                    customer = await customerRepo.getOrCreate(
+                      name: name,
+                      phone: phoneController.text.trim(),
+                    );
+                  }
+                  /// chọn từ dropdown
+                  else {
+                    if (selectedCustomer == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("Vui lòng chọn khách hàng"),
+                        ),
+                      );
+                      return;
+                    }
+
+                    customer = selectedCustomer!;
+                  }
+                  final ticket = await TicketRepository().createTicket(
+                    customerId: customer.id,
+                    businessDate: DateUtil.today(),
+                    type: selectedType,
+                    totalValue: totalValue.toDouble(),
+                  );
+
+                  await OrderRepository().importOrders(
+                    data: parsed,
+                    type: selectedType,
+                    customerId: customer.id,
+                    ticketId: ticket.id,
+                  );
 
                   if (context.mounted) {
                     Navigator.pop(context);
                   }
                 },
+
                 icon: const Icon(Icons.file_upload_outlined),
                 label: const Text(
                   "IMPORT",

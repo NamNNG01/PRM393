@@ -4,10 +4,13 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'models/order.dart';
 import 'models/configuration.dart';
 import 'models/event.dart';
+import 'models/customer.dart';
+import 'models/ticket.dart';
 import 'screens/home.dart';
 
 import 'hive/hive_boxes.dart';
 import 'hive/config_box.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -16,10 +19,14 @@ void main() async {
   Hive.registerAdapter(OrderAdapter());
   Hive.registerAdapter(ConfigurationAdapter());
   Hive.registerAdapter(EventAdapter());
+  Hive.registerAdapter(CustomerAdapter());
+  Hive.registerAdapter(TicketAdapter());
+  await Hive.openBox<Ticket>(HiveBoxes.ticketBox);
   await Hive.openBox<Order>(HiveBoxes.orderBox);
   await Hive.openBox<Configuration>(HiveBoxes.configBox);
   await Hive.openBox<Event>(HiveBoxes.eventBox);
   await Hive.openBox(ConfigBox.boxName);
+  await Hive.openBox<Customer>(HiveBoxes.customerBox);
   final configBox = Hive.box<Configuration>(HiveBoxes.configBox);
 
   if (configBox.isEmpty) {
@@ -50,10 +57,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
         scaffoldBackgroundColor: Colors.grey[50],
-        appBarTheme: const AppBarTheme(
-          centerTitle: true,
-          elevation: 0,
-        ),
+        appBarTheme: const AppBarTheme(centerTitle: true, elevation: 0),
       ),
       home: const HomeScreen(),
     );

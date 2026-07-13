@@ -1,53 +1,50 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'order.dart';
+part of 'ticket.dart';
 
 // **************************************************************************
 // TypeAdapterGenerator
 // **************************************************************************
 
-class OrderAdapter extends TypeAdapter<Order> {
+class TicketAdapter extends TypeAdapter<Ticket> {
   @override
-  final int typeId = 0;
+  final int typeId = 4;
 
   @override
-  Order read(BinaryReader reader) {
+  Ticket read(BinaryReader reader) {
     final numOfFields = reader.readByte();
     final fields = <int, dynamic>{
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
-    return Order(
-      productCode: fields[0] as String,
-      type: fields[1] as String,
-      amount: fields[2] as double,
-      unit: fields[3] as int,
-      createdAt: fields[4] as DateTime,
-      ticketId: fields[5] as String,
-      customerId: fields[6] as String,
-      businessDate: fields[7] as String,
+    return Ticket(
+      id: fields[0] as String,
+      customerId: fields[1] as String,
+      type: fields[2] as String,
+      totalValue: fields[3] as double,
+      businessDate: fields[4] as String,
+      settled: fields[5] as bool,
+      createdAt: fields[6] as DateTime,
     );
   }
 
   @override
-  void write(BinaryWriter writer, Order obj) {
+  void write(BinaryWriter writer, Ticket obj) {
     writer
-      ..writeByte(8)
-      ..writeByte(0)
-      ..write(obj.productCode)
-      ..writeByte(1)
-      ..write(obj.type)
-      ..writeByte(2)
-      ..write(obj.amount)
-      ..writeByte(3)
-      ..write(obj.unit)
-      ..writeByte(4)
-      ..write(obj.createdAt)
-      ..writeByte(5)
-      ..write(obj.ticketId)
-      ..writeByte(6)
-      ..write(obj.customerId)
       ..writeByte(7)
-      ..write(obj.businessDate);
+      ..writeByte(0)
+      ..write(obj.id)
+      ..writeByte(1)
+      ..write(obj.customerId)
+      ..writeByte(2)
+      ..write(obj.type)
+      ..writeByte(3)
+      ..write(obj.totalValue)
+      ..writeByte(4)
+      ..write(obj.businessDate)
+      ..writeByte(5)
+      ..write(obj.settled)
+      ..writeByte(6)
+      ..write(obj.createdAt);
   }
 
   @override
@@ -56,7 +53,7 @@ class OrderAdapter extends TypeAdapter<Order> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is OrderAdapter &&
+      other is TicketAdapter &&
           runtimeType == other.runtimeType &&
           typeId == other.typeId;
 }
