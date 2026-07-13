@@ -11,6 +11,7 @@ import 'report.dart';
 import 'settlement_screen.dart';
 import '../utils/date_util.dart';
 import '../repositories/customer_repository.dart';
+import '../models/customer.dart';
 import '../models/configuration.dart';
 import '../services/config_service.dart';
 
@@ -83,7 +84,7 @@ class _OrderScreenState extends State<OrderScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              "Orders",
+                              "Đơn hàng",
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               textAlign: TextAlign.center,
@@ -138,6 +139,7 @@ class _OrderScreenState extends State<OrderScreen> {
                       const SizedBox(width: 4),
 
                       PopupMenuButton<String>(
+                        tooltip: "Báo cáo & bồi hoàn",
                         padding: const EdgeInsets.all(6),
                         icon: const Icon(
                           Icons.analytics_outlined,
@@ -287,7 +289,7 @@ class _OrderScreenState extends State<OrderScreen> {
                               );
                             },
                             icon: const Icon(Icons.add),
-                            label: const Text("Import đơn hàng"),
+                            label: const Text("Nhập đơn hàng"),
                             style: ElevatedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 20,
@@ -447,7 +449,7 @@ class _OrderScreenState extends State<OrderScreen> {
                   Icon(Icons.add, color: Colors.white),
                   SizedBox(width: 8),
                   Text(
-                    "Import",
+                    "Nhập",
                     style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -464,7 +466,7 @@ class _OrderScreenState extends State<OrderScreen> {
   }
 }
 
-class _OverviewTab extends StatelessWidget {
+class _OverviewTab extends StatefulWidget {
   final Map<String, num> grouped;
 
   final double totalRevenue;
@@ -482,7 +484,21 @@ class _OverviewTab extends StatelessWidget {
   });
 
   @override
+  State<_OverviewTab> createState() => _OverviewTabState();
+}
+
+class _OverviewTabState extends State<_OverviewTab> {
+  static const String _all = "__all__";
+  String selectedCode = _all;
+
+  @override
   Widget build(BuildContext context) {
+    final codes = widget.grouped.keys.toList()..sort();
+
+    final filteredEntries = widget.grouped.entries
+        .where((e) => selectedCode == _all || e.key == selectedCode)
+        .toList();
+
     return ListView(
       padding: const EdgeInsets.only(bottom: 90),
       children: [
@@ -492,36 +508,66 @@ class _OverviewTab extends StatelessWidget {
             children: [
               _MoneyCard(
                 title: "Tổng doanh thu",
-                value: formatNumber(totalRevenue),
+                value: widget.formatNumber(widget.totalRevenue),
               ),
 
-              _MoneyCard(title: "Hoa hồng", value: formatNumber(commission)),
+              _MoneyCard(
+                title: "Hoa hồng",
+                value: widget.formatNumber(widget.commission),
+              ),
 
               _MoneyCard(
                 title: "Thực chuyển cấp trên",
-                value: formatNumber(transferToUpper),
+                value: widget.formatNumber(widget.transferToUpper),
               ),
             ],
           ),
         ),
 
-        const Divider(),
-
-        ...grouped.entries.map(
-          (e) => ListTile(
-            title: Text(
-              e.key,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: DropdownButtonFormField<String>(
+            initialValue: selectedCode,
+            decoration: InputDecoration(
+              isDense: true,
+              labelText: "Lọc theo mã sản phẩm",
+              prefixIcon: const Icon(Icons.filter_alt_outlined, size: 20),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
             ),
-            trailing: Text(formatNumber(e.value)),
+            items: [
+              const DropdownMenuItem(value: _all, child: Text("Tất cả")),
+              ...codes.map((c) => DropdownMenuItem(value: c, child: Text(c))),
+            ],
+            onChanged: (v) => setState(() => selectedCode = v ?? _all),
           ),
         ),
+
+        const Divider(),
+
+        if (filteredEntries.isEmpty)
+          const Padding(
+            padding: EdgeInsets.all(24),
+            child: Center(child: Text("Không tìm thấy mã sản phẩm")),
+          )
+        else
+          ...filteredEntries.map(
+            (e) => ListTile(
+              title: Text(
+                e.key,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              trailing: Text(widget.formatNumber(e.value)),
+            ),
+          ),
       ],
     );
   }
 }
 
-class _DetailTab extends StatelessWidget {
+class _DetailTab extends StatefulWidget {
   final List<Order> orders;
 
   final String Function(num) formatNumber;
@@ -529,44 +575,153 @@ class _DetailTab extends StatelessWidget {
   const _DetailTab({required this.orders, required this.formatNumber});
 
   @override
+  State<_DetailTab> createState() => _DetailTabState();
+}
+
+class _DetailTabState extends State<_DetailTab> {
+  static const String _all = "__all__";
+  final customerRepo = CustomerRepository();
+  String selectedCustomerId = _all;
+  String selectedCode = _all;
+
+  String _two(int n) => n.toString().padLeft(2, '0');
+
+  String _formatDateTime(DateTime dt) {
+    return "${_two(dt.day)}/${_two(dt.month)}/${dt.year} "
+        "${_two(dt.hour)}:${_two(dt.minute)}";
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final customerRepo = CustomerRepository();
+    final codes = widget.orders.map((o) => o.productCode).toSet().toList()
+      ..sort();
 
-    return ListView.builder(
-      padding: const EdgeInsets.only(bottom: 90),
-      itemCount: orders.length,
-      itemBuilder: (context, index) {
-        final order = orders[index];
+    final customerIds = widget.orders.map((o) => o.customerId).toSet();
+    final customers = customerIds
+        .map((id) => customerRepo.getById(id))
+        .whereType<Customer>()
+        .toList()
+      ..sort((a, b) => a.name.compareTo(b.name));
 
-        final customer = customerRepo.getById(order.customerId);
+    final filteredOrders = widget.orders.where((order) {
+      final matchCustomer =
+          selectedCustomerId == _all || order.customerId == selectedCustomerId;
+      final matchCode = selectedCode == _all || order.productCode == selectedCode;
+      return matchCustomer && matchCode;
+    }).toList();
 
-        final value = order.type == "A" ? order.amount : order.unit;
-
-        return Card(
-          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          child: ListTile(
-            title: Text(order.productCode),
-
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "${customer?.name ?? "Unknown"}"
-                  " - "
-                  "${customer?.phone ?? ""}",
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+          child: DropdownButtonFormField<String>(
+            initialValue: selectedCustomerId,
+            decoration: InputDecoration(
+              isDense: true,
+              labelText: "Lọc theo khách hàng",
+              prefixIcon: const Icon(Icons.person_outline, size: 20),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+            ),
+            items: [
+              const DropdownMenuItem(value: _all, child: Text("Tất cả")),
+              ...customers.map(
+                (c) => DropdownMenuItem(
+                  value: c.id,
+                  child: Text(
+                    "${c.name} - ${c.phone}",
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-
-                Text(order.createdAt.toString()),
-              ],
-            ),
-
-            trailing: Text(
-              formatNumber(value),
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
+              ),
+            ],
+            onChanged: (v) => setState(() => selectedCustomerId = v ?? _all),
           ),
-        );
-      },
+        ),
+        Padding(
+          padding: const EdgeInsets.all(12),
+          child: DropdownButtonFormField<String>(
+            initialValue: selectedCode,
+            decoration: InputDecoration(
+              isDense: true,
+              labelText: "Lọc theo mã sản phẩm",
+              prefixIcon: const Icon(Icons.filter_alt_outlined, size: 20),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+            ),
+            items: [
+              const DropdownMenuItem(value: _all, child: Text("Tất cả")),
+              ...codes.map((c) => DropdownMenuItem(value: c, child: Text(c))),
+            ],
+            onChanged: (v) => setState(() => selectedCode = v ?? _all),
+          ),
+        ),
+        Expanded(
+          child: filteredOrders.isEmpty
+              ? const Center(child: Text("Không tìm thấy kết quả"))
+              : ListView.builder(
+                  padding: const EdgeInsets.only(bottom: 90),
+                  itemCount: filteredOrders.length,
+                  itemBuilder: (context, index) {
+                    final order = filteredOrders[index];
+
+                    final customer = customerRepo.getById(order.customerId);
+
+                    final value = order.type == "A"
+                        ? order.amount
+                        : order.unit;
+
+                    return Card(
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      child: ListTile(
+                        title: Text(order.productCode),
+
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "${customer?.name ?? "Không rõ"}"
+                              " - "
+                              "${customer?.phone ?? ""}",
+                            ),
+
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.access_time,
+                                  size: 13,
+                                  color: Colors.grey[600],
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  _formatDateTime(order.createdAt),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+
+                        trailing: Text(
+                          widget.formatNumber(value),
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ],
     );
   }
 }

@@ -58,7 +58,7 @@ class HomeScreen extends StatelessWidget {
                           child: Column(
                             children: [
                               Text(
-                                "Agent Ticket Manager",
+                                "Quản Lý Đại Lý Vé Số",
                                 textAlign: TextAlign.center,
                                 style: Theme.of(context)
                                     .textTheme
@@ -190,7 +190,7 @@ class HomeScreen extends StatelessWidget {
                               },
                               icon: const Icon(Icons.arrow_forward_rounded),
                               label: const Text(
-                                "Manage Orders",
+                                "Quản lý đơn hàng",
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,

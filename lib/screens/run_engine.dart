@@ -12,11 +12,11 @@ class RunEngineScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Run Engine"),
+        title: const Text("Chạy tính toán"),
       ),
       body: Center(
         child: ElevatedButton(
-          child: const Text("CALCULATE REPORT"),
+          child: const Text("TÍNH BÁO CÁO"),
           onPressed: () {
             final engine = RiskEngine();
             final repo = OrderRepository();
