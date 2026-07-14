@@ -17,6 +17,8 @@ class ImportOrderScreen extends StatefulWidget {
 class _ImportOrderScreenState extends State<ImportOrderScreen> {
   String selectedType = "A";
   bool showExample = false;
+  // Đơn vị tiền: 1.0 = nghìn đồng, 0.001 = đồng
+  double _amountUnit = 1.0;
 
   final TextEditingController inputController = TextEditingController();
   final TextEditingController customerController = TextEditingController();
@@ -88,6 +90,12 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
       if (value == null || value <= 0) {
         throw FormatException(
           "Dòng $lineNumber: Số tiền '$valueStr' không hợp lệ. Phải là số dương.",
+        );
+      }
+
+      if (selectedType == "A" && _amountUnit == 0.001 && value < 1000) {
+        throw FormatException(
+          "Dòng $lineNumber: Số tiền '$valueStr' không hợp lệ. Khi chọn đơn vị Đồng, số tiền tối thiểu phải là 1.000đ.",
         );
       }
 
@@ -363,6 +371,55 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                         ],
                       ),
                     ),
+                    const SizedBox(height: 16),
+                    // DROPDOWN ĐƠN VỊ TIỀN
+                    Row(
+                      children: [
+                        Icon(Icons.monetization_on_outlined, color: colorScheme.primary, size: 18),
+                        const SizedBox(width: 6),
+                        Text(
+                          "Đơn vị tiền:",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: DropdownButtonFormField<double>(
+                            initialValue: _amountUnit,
+                            decoration: InputDecoration(
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: BorderSide(color: colorScheme.outlineVariant),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                              ),
+                              filled: true,
+                              fillColor: colorScheme.surfaceContainerLowest,
+                            ),
+                            items: const [
+                              DropdownMenuItem(
+                                value: 1.0,
+                                child: Text('Nghìn đồng (×1.000)', style: TextStyle(fontSize: 13)),
+                              ),
+                              DropdownMenuItem(
+                                value: 0.001,
+                                child: Text('Đồng (×1)', style: TextStyle(fontSize: 13)),
+                              ),
+                            ],
+                            onChanged: (v) => setState(() => _amountUnit = v ?? 1.0),
+                          ),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 20),
                     Row(
                       children: [
@@ -509,7 +566,12 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                     return;
                   }
 
-                  final totalValue = parsed.values.fold<num>(
+                  // Áp dụng đơn vị tiền vào tất cả giá trị (chỉ áp dụng cho loại A)
+                  final multiplied = parsed.map(
+                    (k, v) => MapEntry(k, selectedType == "A" ? v * _amountUnit : v),
+                  );
+
+                  final totalValue = multiplied.values.fold<num>(
                     0,
                     (a, b) => a + b,
                   );
@@ -560,7 +622,7 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                   );
 
                   await OrderRepository().importOrders(
-                    data: parsed,
+                    data: multiplied,
                     type: selectedType,
                     customerId: customer.id,
                     ticketId: ticket.id,
