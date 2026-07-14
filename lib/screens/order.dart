@@ -63,9 +63,15 @@ class _OrderScreenState extends State<OrderScreen> {
             child: Icon(icon, color: color, size: 18),
           ),
           const SizedBox(width: 12),
-          Text(
-            label,
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+          Flexible(
+            child: Text(
+              label,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
+            ),
           ),
         ],
       ),
@@ -777,11 +783,118 @@ class _OverviewTab extends StatefulWidget {
   State<_OverviewTab> createState() => _OverviewTabState();
 }
 
+abstract class _SortOptionLike {
+  String get label;
+  IconData get icon;
+}
+
+enum _SortOption implements _SortOptionLike {
+  valueDesc("Giá trị: Cao → Thấp", Icons.arrow_downward_rounded),
+  valueAsc("Giá trị: Thấp → Cao", Icons.arrow_upward_rounded),
+  codeAsc("Mã: A → Z", Icons.sort_by_alpha_rounded),
+  codeDesc("Mã: Z → A", Icons.sort_by_alpha_rounded);
+
+  @override
+  final String label;
+  @override
+  final IconData icon;
+
+  const _SortOption(this.label, this.icon);
+}
+
+enum _OrderSortOption implements _SortOptionLike {
+  timeDesc("Mới nhất", Icons.schedule_rounded),
+  timeAsc("Cũ nhất", Icons.history_rounded),
+  valueDesc("Giá trị: Cao → Thấp", Icons.arrow_downward_rounded),
+  valueAsc("Giá trị: Thấp → Cao", Icons.arrow_upward_rounded);
+
+  @override
+  final String label;
+  @override
+  final IconData icon;
+
+  const _OrderSortOption(this.label, this.icon);
+}
+
+/// Nút mở menu sắp xếp, dùng chung cho các danh sách trong màn Đơn hàng
+class _SortMenuButton<T extends _SortOptionLike> extends StatelessWidget {
+  final T value;
+  final List<T> values;
+  final ValueChanged<T> onChanged;
+
+  const _SortMenuButton({
+    required this.value,
+    required this.values,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return PopupMenuButton<T>(
+      tooltip: "Sắp xếp",
+      padding: EdgeInsets.zero,
+      elevation: 6,
+      offset: const Offset(0, 48),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      initialValue: value,
+      onSelected: onChanged,
+      icon: Container(
+        width: 46,
+        height: 46,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: colorScheme.primary.withValues(alpha: 0.07),
+          borderRadius: BorderRadius.circular(23),
+          border: Border.all(color: colorScheme.primary.withValues(alpha: 0.25)),
+        ),
+        child: Icon(
+          Icons.sort_rounded,
+          size: 20,
+          color: colorScheme.primary,
+        ),
+      ),
+      itemBuilder: (_) => values.map((option) {
+        final selected = option == value;
+
+        return PopupMenuItem<T>(
+          value: option,
+          child: Row(
+            children: [
+              Icon(
+                option.icon,
+                size: 18,
+                color: selected ? colorScheme.primary : Colors.grey[600],
+              ),
+              const SizedBox(width: 10),
+              Flexible(
+                child: Text(
+                  option.label,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontWeight: selected ? FontWeight.bold : FontWeight.w500,
+                    color: selected ? colorScheme.primary : Colors.black87,
+                    fontSize: 13.5,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
+
 class _OverviewTabState extends State<_OverviewTab> {
   static const String _all = "__all__";
   String selectedType = _all;
   final searchController = TextEditingController();
   String keyword = "";
+  _SortOption sortOption = _SortOption.valueDesc;
 
   @override
   void dispose() {
@@ -805,6 +918,25 @@ class _OverviewTabState extends State<_OverviewTab> {
       final matchCode = kw.isEmpty || code.toLowerCase().contains(kw);
       return matchType && matchCode;
     }).toList();
+
+    switch (sortOption) {
+      case _SortOption.valueDesc:
+        filteredEntries.sort((a, b) => b.value.compareTo(a.value));
+        break;
+      case _SortOption.valueAsc:
+        filteredEntries.sort((a, b) => a.value.compareTo(b.value));
+        break;
+      case _SortOption.codeAsc:
+        filteredEntries.sort(
+          (a, b) => a.key.split('|')[1].compareTo(b.key.split('|')[1]),
+        );
+        break;
+      case _SortOption.codeDesc:
+        filteredEntries.sort(
+          (a, b) => b.key.split('|')[1].compareTo(a.key.split('|')[1]),
+        );
+        break;
+    }
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 90),
@@ -839,38 +971,54 @@ class _OverviewTabState extends State<_OverviewTab> {
 
         const SizedBox(height: 10),
 
-        TextField(
-          controller: searchController,
-          onChanged: (v) => setState(() => keyword = v),
-          decoration: InputDecoration(
-            isDense: true,
-            hintText: "Tìm theo mã sản phẩm...",
-            prefixIcon: const Icon(Icons.search, size: 20),
-            suffixIcon: keyword.isEmpty
-                ? null
-                : IconButton(
-                    icon: const Icon(Icons.clear, size: 18),
-                    onPressed: () {
-                      searchController.clear();
-                      setState(() => keyword = "");
-                    },
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: TextField(
+                controller: searchController,
+                onChanged: (v) => setState(() => keyword = v),
+                decoration: InputDecoration(
+                  isDense: true,
+                  hintText: "Tìm theo mã sản phẩm...",
+                  prefixIcon: const Icon(Icons.search, size: 20),
+                  suffixIcon: keyword.isEmpty
+                      ? null
+                      : IconButton(
+                          icon: const Icon(Icons.clear, size: 18),
+                          onPressed: () {
+                            searchController.clear();
+                            setState(() => keyword = "");
+                          },
+                        ),
+                  filled: true,
+                  fillColor: colorScheme.surface,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide(color: colorScheme.outlineVariant),
                   ),
-            filled: true,
-            fillColor: colorScheme.surface,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(24),
-              borderSide: BorderSide(color: colorScheme.outlineVariant),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide(color: colorScheme.outlineVariant),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide(
+                      color: colorScheme.primary,
+                      width: 1.5,
+                    ),
+                  ),
+                ),
+              ),
             ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(24),
-              borderSide: BorderSide(color: colorScheme.outlineVariant),
+            const SizedBox(width: 8),
+            _SortMenuButton<_SortOption>(
+              value: sortOption,
+              values: _SortOption.values,
+              onChanged: (v) => setState(() => sortOption = v),
             ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(24),
-              borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
-            ),
-          ),
+          ],
         ),
 
         const SizedBox(height: 12),
@@ -1044,6 +1192,7 @@ class _DetailTabState extends State<_DetailTab> {
   final searchController = TextEditingController();
   String keyword = "";
   String selectedType = _all;
+  _OrderSortOption sortOption = _OrderSortOption.timeDesc;
 
   @override
   void dispose() {
@@ -1075,6 +1224,28 @@ class _DetailTabState extends State<_DetailTab> {
           (customer?.name.toLowerCase().contains(kw) ?? false) ||
           (customer?.phone.toLowerCase().contains(kw) ?? false);
     }).toList();
+
+    double orderValue(Order o) =>
+        o.type == "A" ? o.amount : o.unit * config.ticketPriceB;
+
+    switch (sortOption) {
+      case _OrderSortOption.timeDesc:
+        filteredOrders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        break;
+      case _OrderSortOption.timeAsc:
+        filteredOrders.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+        break;
+      case _OrderSortOption.valueDesc:
+        filteredOrders.sort(
+          (a, b) => orderValue(b).compareTo(orderValue(a)),
+        );
+        break;
+      case _OrderSortOption.valueAsc:
+        filteredOrders.sort(
+          (a, b) => orderValue(a).compareTo(orderValue(b)),
+        );
+        break;
+    }
 
     return Column(
       children: [
@@ -1116,20 +1287,32 @@ class _DetailTabState extends State<_DetailTab> {
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-          child: _PillDropdown<String>(
-            icon: Icons.category_outlined,
-            value: selectedType,
-            accent: selectedType == "A"
-                ? Colors.indigo
-                : selectedType == "B"
-                ? Colors.teal
-                : colorScheme.primary,
-            items: const [
-              DropdownMenuItem(value: _all, child: Text("Tất cả loại")),
-              DropdownMenuItem(value: "A", child: Text("Loại A")),
-              DropdownMenuItem(value: "B", child: Text("Loại B")),
+          child: Row(
+            children: [
+              Expanded(
+                child: _PillDropdown<String>(
+                  icon: Icons.category_outlined,
+                  value: selectedType,
+                  accent: selectedType == "A"
+                      ? Colors.indigo
+                      : selectedType == "B"
+                      ? Colors.teal
+                      : colorScheme.primary,
+                  items: const [
+                    DropdownMenuItem(value: _all, child: Text("Tất cả loại")),
+                    DropdownMenuItem(value: "A", child: Text("Loại A")),
+                    DropdownMenuItem(value: "B", child: Text("Loại B")),
+                  ],
+                  onChanged: (v) => setState(() => selectedType = v ?? _all),
+                ),
+              ),
+              const SizedBox(width: 8),
+              _SortMenuButton<_OrderSortOption>(
+                value: sortOption,
+                values: _OrderSortOption.values,
+                onChanged: (v) => setState(() => sortOption = v),
+              ),
             ],
-            onChanged: (v) => setState(() => selectedType = v ?? _all),
           ),
         ),
         Expanded(
@@ -1230,11 +1413,14 @@ class _DetailTabState extends State<_DetailTab> {
                                           color: Colors.grey[600],
                                         ),
                                         const SizedBox(width: 4),
-                                        Text(
-                                          customer!.phone,
-                                          style: TextStyle(
-                                            fontSize: 12.5,
-                                            color: Colors.grey[700],
+                                        Expanded(
+                                          child: Text(
+                                            customer!.phone,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              fontSize: 12.5,
+                                              color: Colors.grey[700],
+                                            ),
                                           ),
                                         ),
                                       ],
@@ -1262,29 +1448,33 @@ class _DetailTabState extends State<_DetailTab> {
                               ),
                             ),
                             const SizedBox(width: 8),
-                            Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  isTypeA
-                                      ? widget.formatNumber(order.amount)
-                                      : "${order.unit} điểm",
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                if (!isTypeA)
+                            Flexible(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
                                   Text(
-                                    widget.formatNumber(
-                                      order.unit * config.ticketPriceB,
-                                    ),
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.grey[600],
+                                    isTypeA
+                                        ? widget.formatNumber(order.amount)
+                                        : "${order.unit} điểm",
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                              ],
+                                  if (!isTypeA)
+                                    Text(
+                                      widget.formatNumber(
+                                        order.unit * config.ticketPriceB,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
@@ -1344,9 +1534,14 @@ class _MoneyCard extends StatelessWidget {
               style: const TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
-          Text(
-            value,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
           ),
         ],
       ),
