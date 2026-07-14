@@ -1435,11 +1435,14 @@ class _DetailTabState extends State<_DetailTab> {
                                         color: Colors.grey[500],
                                       ),
                                       const SizedBox(width: 4),
-                                      Text(
-                                        _formatDateTime(order.createdAt),
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey[500],
+                                      Flexible(
+                                        child: Text(
+                                          _formatDateTime(order.createdAt),
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey[500],
+                                          ),
                                         ),
                                       ),
                                     ],
