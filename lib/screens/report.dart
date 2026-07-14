@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../utils/date_util.dart';
+import '../services/export_service.dart';
 
 class ReportScreen extends StatefulWidget {
   final Map<String, dynamic> resultA;
@@ -105,6 +107,50 @@ class _ReportScreenState extends State<ReportScreen> {
             icon: Icon(Icons.arrow_back, color: colorScheme.onPrimary),
             onPressed: () => Navigator.pop(context),
           ),
+          actions: [
+            PopupMenuButton<String>(
+              icon: Icon(Icons.download_outlined, color: colorScheme.onPrimary),
+              onSelected: (value) async {
+                final dateStr = DateUtil.today();
+                if (value == 'excel') {
+                  await ExportService.exportReportToExcel(
+                    resultA: widget.resultA,
+                    resultB: widget.resultB,
+                    date: dateStr,
+                  );
+                } else if (value == 'pdf') {
+                  await ExportService.exportReportToPdf(
+                    resultA: widget.resultA,
+                    resultB: widget.resultB,
+                    date: dateStr,
+                  );
+                }
+              },
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 'excel',
+                  child: Row(
+                    children: [
+                      Icon(Icons.table_view, color: Colors.green),
+                      SizedBox(width: 8),
+                      Text("Xuất Excel"),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'pdf',
+                  child: Row(
+                    children: [
+                      Icon(Icons.picture_as_pdf, color: Colors.red),
+                      SizedBox(width: 8),
+                      Text("Xuất PDF"),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(width: 8),
+          ],
           bottom: TabBar(
             indicatorColor: colorScheme.onPrimary,
             labelColor: colorScheme.onPrimary,

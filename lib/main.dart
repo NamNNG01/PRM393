@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import 'models/order.dart';
@@ -64,6 +65,38 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: Colors.grey[50],
         appBarTheme: const AppBarTheme(centerTitle: true, elevation: 0),
       ),
+      builder: (context, child) {
+        if (!kIsWeb) return child!;
+        return Container(
+          color: Colors.grey[200],
+          child: Center(
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 480),
+              decoration: BoxDecoration(
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 10,
+                    spreadRadius: 2,
+                  ),
+                ],
+              ),
+              child: Builder(
+                builder: (context) {
+                  final mediaQuery = MediaQuery.of(context);
+                  final width = mediaQuery.size.width.clamp(0.0, 480.0);
+                  return MediaQuery(
+                    data: mediaQuery.copyWith(
+                      size: Size(width, mediaQuery.size.height),
+                    ),
+                    child: child!,
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+      },
       home: const OrderScreen(),
     );
   }
