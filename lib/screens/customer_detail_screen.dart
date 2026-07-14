@@ -1,10 +1,7 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 
 import '../models/customer.dart';
 import '../models/order.dart';
-import '../models/winning_ticket.dart';
 import '../widgets/proof_image_view.dart';
 
 import '../repositories/order_repository.dart';
@@ -30,26 +27,48 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
   String _formatDate(DateTime date) {
     return "${date.day.toString().padLeft(2, '0')}-"
         "${date.month.toString().padLeft(2, '0')}-"
-        "${(date.year % 100).toString().padLeft(2, '0')}";
+        "${date.year}";
+  }
+
+  String formatCurrency(num amount) {
+    final intVal = amount.round();
+    final regex = RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))');
+    return "${intVal.toString().replaceAllMapped(regex, (Match m) => "${m[1]}.")} VNĐ";
   }
 
   List<Order> _orders() {
     final orders = orderRepo.getByCustomer(widget.customer.id).cast<Order>();
-
     orders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-
     return orders;
+  }
+
+  Widget _buildStatItem(BuildContext context, {required IconData icon, required String label, required String value}) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Column(
+      children: [
+        Icon(icon, color: colorScheme.primary, size: 22),
+        const SizedBox(height: 6),
+        Text(
+          label,
+          style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: colorScheme.onSurface),
+        ),
+      ],
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final orders = _orders();
-
     final dates = orders.map((e) => e.businessDate).toSet().toList();
 
     final filtered = orders.where((o) {
       final keyword = searchController.text.trim().toLowerCase();
-
       final matchCode = keyword.isEmpty
           ? true
           : o.productCode.toLowerCase().contains(keyword);
@@ -61,49 +80,138 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
       return matchCode && matchDate;
     }).toList();
 
+    final totalAmountA = orders.where((e) => e.type == "A").fold<double>(0.0, (sum, item) => sum + item.amount * 1000);
+    final totalPointsB = orders.where((e) => e.type == "B").fold<int>(0, (sum, item) => sum + item.unit);
+
     return Scaffold(
-      appBar: AppBar(title: Text(widget.customer.name)),
+      backgroundColor: colorScheme.surfaceContainerLowest,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight + 12),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.only(
+            bottomLeft: Radius.circular(28),
+            bottomRight: Radius.circular(28),
+          ),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  colorScheme.primary,
+                  colorScheme.primary.withValues(alpha: 0.8),
+                ],
+              ),
+            ),
+            child: SafeArea(
+              bottom: false,
+              child: SizedBox(
+                height: kToolbarHeight + 12,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Text(
+                      widget.customer.name,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                        color: colorScheme.onPrimary,
+                      ),
+                    ),
+                    Positioned(
+                      left: 4,
+                      child: IconButton(
+                        icon: Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          color: colorScheme.onPrimary,
+                          size: 20,
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
       body: Column(
         children: [
+          // PROFILE CARD
           Card(
-            margin: const EdgeInsets.all(12),
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(color: colorScheme.outlineVariant),
+            ),
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            color: colorScheme.surface,
             child: Padding(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.person),
-                      const SizedBox(width: 8),
+                      CircleAvatar(
+                        radius: 26,
+                        backgroundColor: colorScheme.primaryContainer,
+                        child: Icon(Icons.person, size: 26, color: colorScheme.onPrimaryContainer),
+                      ),
+                      const SizedBox(width: 14),
                       Expanded(
-                        child: Text(
-                          widget.customer.name,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                          ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.customer.name,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                                color: colorScheme.onSurface,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Icon(Icons.phone_outlined, size: 16, color: colorScheme.primary),
+                                const SizedBox(width: 6),
+                                Text(
+                                  widget.customer.phone,
+                                  style: TextStyle(
+                                    color: colorScheme.onSurfaceVariant,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
-
-                  const SizedBox(height: 10),
-
+                  const Divider(height: 24),
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      const Icon(Icons.phone),
-                      const SizedBox(width: 8),
-                      Text(widget.customer.phone),
-                    ],
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  Row(
-                    children: [
-                      const Icon(Icons.receipt_long),
-                      const SizedBox(width: 8),
-                      Text("Tổng vé: ${orders.length}"),
+                      _buildStatItem(
+                        context,
+                        icon: Icons.confirmation_number_outlined,
+                        label: "Tổng số vé",
+                        value: "${orders.length}",
+                      ),
+                      _buildStatItem(
+                        context,
+                        icon: Icons.payments_outlined,
+                        label: "Doanh số Loại A",
+                        value: formatCurrency(totalAmountA),
+                      ),
+                      _buildStatItem(
+                        context,
+                        icon: Icons.stars_outlined,
+                        label: "Tổng điểm B",
+                        value: "$totalPointsB điểm",
+                      ),
                     ],
                   ),
                 ],
@@ -111,74 +219,122 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
             ),
           ),
 
+          // FILTERS
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: TextField(
-              controller: searchController,
-              onChanged: (_) => setState(() {}),
-              decoration: const InputDecoration(
-                prefixIcon: Icon(Icons.search),
-                hintText: "Tìm mã số",
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 10),
-
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: DropdownButtonFormField<String>(
-              initialValue: "ALL",
-              decoration: const InputDecoration(labelText: "Lọc theo ngày"),
-              items: [
-                const DropdownMenuItem(value: "ALL", child: Text("Tất cả")),
-
-                ...dates.map((e) => DropdownMenuItem(value: e, child: Text(e))),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: TextField(
+                    controller: searchController,
+                    onChanged: (_) => setState(() {}),
+                    decoration: InputDecoration(
+                      prefixIcon: Icon(Icons.search, color: colorScheme.primary),
+                      hintText: "Tìm mã số...",
+                      filled: true,
+                      fillColor: colorScheme.surface,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: colorScheme.outlineVariant),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: colorScheme.outlineVariant),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 2,
+                  child: DropdownButtonFormField<String>(
+                    initialValue: selectedDate,
+                    decoration: InputDecoration(
+                      labelText: "Lọc theo ngày",
+                      labelStyle: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+                      filled: true,
+                      fillColor: colorScheme.surface,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: colorScheme.outlineVariant),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: colorScheme.outlineVariant),
+                      ),
+                    ),
+                    items: [
+                      const DropdownMenuItem(value: "ALL", child: Text("Tất cả")),
+                      ...dates.map((e) => DropdownMenuItem(value: e, child: Text(e))),
+                    ],
+                    onChanged: (v) {
+                      setState(() {
+                        selectedDate = v ?? "ALL";
+                      });
+                    },
+                  ),
+                ),
               ],
-              onChanged: (v) {
-                setState(() {
-                  selectedDate = v ?? "ALL";
-                });
-              },
             ),
           ),
-
           const SizedBox(height: 10),
 
+          // LIST VIEW
           Expanded(
             child: filtered.isEmpty
-                ? const Center(child: Text("Không có dữ liệu"))
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.history_toggle_off_rounded, size: 64, color: colorScheme.outline),
+                        const SizedBox(height: 12),
+                        Text(
+                          "Không có dữ liệu giao dịch",
+                          style: TextStyle(color: colorScheme.outline, fontSize: 16),
+                        ),
+                      ],
+                    ),
+                  )
                 : ListView.builder(
                     itemCount: filtered.length,
                     itemBuilder: (_, index) {
                       final order = filtered[index];
-
                       final winning = winningRepo.findByTicket(order.ticketId);
-
                       final isWinner = winning != null;
 
                       return Card(
+                        elevation: 0,
                         margin: const EdgeInsets.symmetric(
-                          horizontal: 12,
+                          horizontal: 16,
                           vertical: 6,
                         ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          side: BorderSide(color: colorScheme.outlineVariant, width: 1),
+                        ),
+                        color: colorScheme.surface,
                         child: Padding(
-                          padding: const EdgeInsets.all(12),
+                          padding: const EdgeInsets.all(14),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
                                 children: [
                                   Text(
-                                    order.productCode,
+                                    "Mã số: ${order.productCode}",
                                     style: const TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
-
                                   const Spacer(),
-
                                   Container(
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 10,
@@ -186,80 +342,135 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                                     ),
                                     decoration: BoxDecoration(
                                       color: order.type == "A"
-                                          ? Colors.indigo
-                                          : Colors.teal,
-                                      borderRadius: BorderRadius.circular(20),
+                                          ? Colors.indigo.withValues(alpha: 0.1)
+                                          : Colors.teal.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Text(
-                                      order.type,
-                                      style: const TextStyle(
-                                        color: Colors.white,
+                                      "Loại ${order.type}",
+                                      style: TextStyle(
+                                        color: order.type == "A"
+                                            ? Colors.indigo
+                                            : Colors.teal,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
                                       ),
                                     ),
                                   ),
                                 ],
                               ),
-
-                              const SizedBox(height: 8),
-
-                              Text("Ngày: ${order.businessDate}"),
-
-                              Text(
-                                order.type == "A"
-                                    ? "Giá trị: ${order.amount * 1000}đ"
-                                    : "Điểm: ${order.unit} điểm",
+                              const Divider(height: 20),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    "Ngày: ${order.businessDate}",
+                                    style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 13),
+                                  ),
+                                  Text(
+                                    order.type == "A"
+                                        ? formatCurrency(order.amount * 1000)
+                                        : "${order.unit} điểm",
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                ],
                               ),
-
-                              const Divider(),
-
-                              if (!isWinner) const Text("❌ Chưa trúng"),
-
-                              if (isWinner)
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      "🎉 Vé trúng",
-                                      style: TextStyle(
-                                        color: Colors.green,
-                                        fontWeight: FontWeight.bold,
+                              if (isWinner) ...[
+                                const Divider(height: 20),
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.withValues(alpha: 0.08),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: Colors.green.withValues(alpha: 0.2)),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          const Text(
+                                            "🎉 Vé trúng thưởng",
+                                            style: TextStyle(
+                                              color: Colors.green,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13,
+                                            ),
+                                          ),
+                                          const Spacer(),
+                                          Text(
+                                            winning.paid ? "Đã thanh toán" : "Chưa thanh toán",
+                                            style: TextStyle(
+                                              color: winning.paid ? Colors.green : Colors.orange,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                    ),
-
-                                    const SizedBox(height: 6),
-
-                                    Text(
-                                      winning.paid
-                                          ? "✅ Đã thanh toán"
-                                          : "⏳ Chưa thanh toán",
-                                    ),
-
-                                    if (winning.paidAt != null)
+                                      const SizedBox(height: 6),
                                       Text(
-                                        "Cập nhật: ${_formatDate(winning.paidAt!)}",
-                                      ),
-
-                                    if (winning.note != null &&
-                                        winning.note!.isNotEmpty)
-                                      Text("Ghi chú: ${winning.note}"),
-
-                                    if (winning.proofImageBytes != null)
-                                      Padding(
-                                        padding: const EdgeInsets.only(top: 8),
-                                        child: ClipRRect(
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                          child: Image.memory(
-                                            winning.proofImageBytes!,
-                                            height: 180,
-                                            width: double.infinity,
-                                            fit: BoxFit.cover,
-                                          ),
+                                        "Tiền trúng: ${formatCurrency(winning.payoutAmount)}",
+                                        style: const TextStyle(
+                                          color: Colors.redAccent,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 13,
                                         ),
                                       ),
+                                      if (winning.paidAt != null)
+                                        Padding(
+                                          padding: const EdgeInsets.only(top: 4),
+                                          child: Text(
+                                            "Cập nhật lúc: ${_formatDate(winning.paidAt!)}",
+                                            style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 12),
+                                          ),
+                                        ),
+                                      if (winning.note != null && winning.note!.isNotEmpty)
+                                        Padding(
+                                          padding: const EdgeInsets.only(top: 4),
+                                          child: Text(
+                                            "Ghi chú: ${winning.note}",
+                                            style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 12),
+                                          ),
+                                        ),
+                                      if (winning.proofImageBytes != null)
+                                        Padding(
+                                          padding: const EdgeInsets.only(top: 8),
+                                          child: ClipRRect(
+                                            borderRadius: BorderRadius.circular(12),
+                                            child: Image.memory(
+                                              winning.proofImageBytes!,
+                                              height: 180,
+                                              width: double.infinity,
+                                              fit: BoxFit.cover,
+                                            ),
+                                          ),
+                                        )
+                                      else if ((winning.proofFile ?? "").isNotEmpty)
+                                        Padding(
+                                          padding: const EdgeInsets.only(top: 8),
+                                          child: ProofImageView(path: winning.proofFile!),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ] else ...[
+                                const Divider(height: 20),
+                                Row(
+                                  children: [
+                                    Icon(Icons.cancel_outlined, size: 16, color: colorScheme.error),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      "Chưa trúng thưởng",
+                                      style: TextStyle(color: colorScheme.error, fontSize: 12),
+                                    ),
                                   ],
                                 ),
+                              ],
                             ],
                           ),
                         ),
