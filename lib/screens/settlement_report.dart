@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../utils/date_util.dart';
 import '../services/export_service.dart';
 
@@ -95,6 +96,20 @@ class SettlementReportScreen extends StatelessWidget {
                               result: result,
                               date: dateStr,
                             );
+                          } else if (value == 'copy') {
+                            final text = ExportService.buildSettlementCopyText(
+                              result: result,
+                              date: dateStr,
+                            );
+                            await Clipboard.setData(ClipboardData(text: text));
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Đã sao chép báo cáo vào clipboard'),
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                            }
                           }
                         },
                         itemBuilder: (context) => [
@@ -115,6 +130,16 @@ class SettlementReportScreen extends StatelessWidget {
                                 Icon(Icons.picture_as_pdf, color: Colors.red),
                                 SizedBox(width: 8),
                                 Text("Xuất PDF"),
+                              ],
+                            ),
+                          ),
+                          const PopupMenuItem(
+                            value: 'copy',
+                            child: Row(
+                              children: [
+                                Icon(Icons.copy, color: Colors.blueGrey),
+                                SizedBox(width: 8),
+                                Text("Sao chép"),
                               ],
                             ),
                           ),
