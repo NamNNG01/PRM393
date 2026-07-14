@@ -535,13 +535,15 @@ class _WinnerGroupCardState extends State<_WinnerGroupCard> {
               if (imageBytes != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 12),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.memory(
-                      imageBytes!,
-                      height: 180,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
+                  child: Center(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        width: 220,
+                        height: 220,
+                        color: Colors.grey.shade200,
+                        child: Image.memory(imageBytes!, fit: BoxFit.contain),
+                      ),
                     ),
                   ),
                 ),
