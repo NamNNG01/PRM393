@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:firebase_core/firebase_core.dart';
 
 import 'models/order.dart';
 import 'models/configuration.dart';
@@ -13,13 +12,8 @@ import 'hive/hive_boxes.dart';
 import 'hive/config_box.dart';
 import 'models/winning_result.dart';
 
-import 'firebase_options.dart';
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
 
   await Hive.initFlutter();
 
