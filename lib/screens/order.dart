@@ -15,6 +15,7 @@ import '../repositories/customer_repository.dart';
 import '../models/configuration.dart';
 import '../services/config_service.dart';
 import 'customer_list_screen.dart';
+import '../services/export_service.dart';
 
 class OrderScreen extends StatefulWidget {
   const OrderScreen({super.key});
@@ -724,23 +725,68 @@ class _OrderScreenState extends State<OrderScreen> {
                 ),
               ],
             ),
-            child: Material(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(28),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(28),
-                onTap: () {
-                  _copyOrders();
+            child: Theme(
+              data: Theme.of(context).copyWith(
+                cardColor: Colors.white,
+              ),
+              child: PopupMenuButton<String>(
+                tooltip: "Xuất dữ liệu",
+                elevation: 6,
+                offset: const Offset(0, -180),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                onSelected: (value) async {
+                  if (value == "copy") {
+                    await _copyOrders();
+                  } else {
+                    final dateStr = DateUtil.today();
+                    final config = ConfigService().getConfig();
+                    final orders = OrderRepository().getTodayOrders();
+                    if (value == "excel") {
+                      await ExportService.exportOrdersToExcel(
+                        orders: orders,
+                        config: config,
+                        date: dateStr,
+                      );
+                    } else if (value == "pdf") {
+                      await ExportService.exportOrdersToPdf(
+                        orders: orders,
+                        config: config,
+                        date: dateStr,
+                      );
+                    }
+                  }
                 },
+                itemBuilder: (_) => [
+                  _menuItem(
+                    value: "copy",
+                    icon: Icons.copy,
+                    label: "Sao chép",
+                    color: Colors.blueGrey,
+                  ),
+                  _menuItem(
+                    value: "excel",
+                    icon: Icons.table_view,
+                    label: "Xuất Excel",
+                    color: Colors.green,
+                  ),
+                  _menuItem(
+                    value: "pdf",
+                    icon: Icons.picture_as_pdf,
+                    label: "Xuất PDF",
+                    color: Colors.red,
+                  ),
+                ],
                 child: const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 22, vertical: 16),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.copy, color: Colors.white),
+                      Icon(Icons.download_rounded, color: Colors.white),
                       SizedBox(width: 8),
                       Text(
-                        "Sao chép",
+                        "Xuất",
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,

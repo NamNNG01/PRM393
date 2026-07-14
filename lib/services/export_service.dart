@@ -3,6 +3,8 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../utils/export_helper.dart';
+import '../models/order.dart';
+import '../models/configuration.dart';
 
 class ExportService {
   static String _formatMoney(dynamic value) {
@@ -109,10 +111,6 @@ class ExportService {
     final num revB = resultB["tongDoanhThu"] * 1000 ?? 0;
     final totalRevenue = revA + revB;
 
-    final keptA = resultA["tongGiuLai"] * 1000 ?? 0;
-    final keptB = resultB["tongGiuLai"] * 1000 ?? 0;
-    final totalKept = keptA + keptB;
-
     final fwdA = resultA["tongChuyen"] * 1000 ?? 0;
     final fwdB = resultB["tongChuyen"] * 1000 ?? 0;
     final totalForwarded = fwdA + fwdB;
@@ -124,20 +122,18 @@ class ExportService {
     final netFwdA = resultA["tongThucChuyen"] * 1000 ?? 0;
     final netFwdB = resultB["tongThucChuyen"] * 1000 ?? 0;
     final totalNetForwarded = netFwdA + netFwdB;
-
     final holdA = resultA["cam"] * 1000 ?? 0;
     final holdB = resultB["cam"] * 1000 ?? 0;
     final totalHold = holdA + holdB;
 
     _writeRow(overviewSheet, 3, ["Chỉ số", "Giá trị"], style: headerStyle, rowHeight: 28.0);
-    _writeRowWithStyles(overviewSheet, 4, ["TỔNG THU NHẬP ĐẠI LÝ (CẦM)", _formatMoney(totalHold)], [boldLabelStyle, boldValueStyle], rowHeight: 26.0);
+    _writeRowWithStyles(overviewSheet, 4, ["TỔNG THU NHẬP ĐẠI LÝ (CẢM)", _formatMoney(totalHold)], [boldLabelStyle, boldValueStyle], rowHeight: 26.0);
     _writeRowWithStyles(overviewSheet, 5, ["Doanh thu A + B", _formatMoney(totalRevenue)], [labelStyle, valueStyle]);
     _writeRowWithStyles(overviewSheet, 6, ["Thực chuyển chủ", _formatMoney(totalNetForwarded)], [labelStyle, valueStyle]);
     _writeRowWithStyles(overviewSheet, 7, ["Hoa hồng nhận", _formatMoney(totalCommission)], [labelStyle, valueStyle]);
-    _writeRowWithStyles(overviewSheet, 8, ["Tổng giữ lại", _formatMoney(totalKept)], [labelStyle, valueStyle]);
-    _writeRowWithStyles(overviewSheet, 9, ["Tổng chuyển đi", _formatMoney(totalForwarded)], [labelStyle, valueStyle]);
-    _writeRowWithStyles(overviewSheet, 10, ["Doanh thu loại A", _formatMoney(revA)], [labelStyle, valueStyle]);
-    _writeRowWithStyles(overviewSheet, 11, ["Doanh thu loại B", _formatMoney(revB)], [labelStyle, valueStyle]);
+    _writeRowWithStyles(overviewSheet, 8, ["Tổng chuyển đi", _formatMoney(totalForwarded)], [labelStyle, valueStyle]);
+    _writeRowWithStyles(overviewSheet, 9, ["Doanh thu loại A", _formatMoney(revA)], [labelStyle, valueStyle]);
+    _writeRowWithStyles(overviewSheet, 10, ["Doanh thu loại B", _formatMoney(revB)], [labelStyle, valueStyle]);
 
     // Sheet 2: Mã Loại A
     final Sheet aSheet = excel['Mã Loại A'];
@@ -148,38 +144,33 @@ class ExportService {
     _writeExcelHeader(aSheet, "BÁO CÁO MÃ LOẠI A", date, 3);
     _writeRow(aSheet, 3, ["Chỉ số", "Giá trị", ""], style: headerStyle, rowHeight: 28.0);
     aSheet.merge(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: 3), CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: 3));
-    
+
     _writeRowWithStyles(aSheet, 4, ["Doanh thu", _formatMoney(revA), ""], [labelStyle, valueStyle, null]);
     aSheet.merge(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: 4), CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: 4));
-    
-    _writeRowWithStyles(aSheet, 5, ["Giữ tối đa / mã", _formatMoney(resultA["giaGiuMoiCon"] * 1000 ?? 0), ""], [labelStyle, valueStyle, null]);
+
+    _writeRowWithStyles(aSheet, 5, ["Hoa hồng", _formatMoney(commA), ""], [labelStyle, valueStyle, null]);
     aSheet.merge(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: 5), CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: 5));
-    
-    _writeRowWithStyles(aSheet, 6, ["Tổng giữ lại", _formatMoney(keptA), ""], [labelStyle, valueStyle, null]);
+
+    _writeRowWithStyles(aSheet, 6, ["Tổng chuyển đi", _formatMoney(fwdA), ""], [labelStyle, valueStyle, null]);
     aSheet.merge(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: 6), CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: 6));
-    
-    _writeRowWithStyles(aSheet, 7, ["Hoa hồng", _formatMoney(commA), ""], [labelStyle, valueStyle, null]);
+
+    _writeRowWithStyles(aSheet, 7, ["Thực chuyển (sau hồng)", _formatMoney(netFwdA), ""], [boldLabelStyle, boldValueStyle, null]);
     aSheet.merge(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: 7), CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: 7));
-    
-    _writeRowWithStyles(aSheet, 8, ["Thực chuyển", _formatMoney(netFwdA), ""], [labelStyle, valueStyle, null]);
-    aSheet.merge(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: 8), CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: 8));
-    
-    _writeRowWithStyles(aSheet, 9, ["Thực cầm", _formatMoney(holdA), ""], [boldLabelStyle, boldValueStyle, null]);
-    aSheet.merge(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: 9), CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: 9));
 
-    _writeRow(aSheet, 11, ["CHI TIẾT THEO MÃ SẢN PHẨM (LOẠI A)", "", ""], style: sectionStyle, rowHeight: 26.0);
-    aSheet.merge(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 11), CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: 11));
+    _writeRow(aSheet, 9, ["CHI TIẾT THEO MÃ SẢN PHẨM (LOẠI A)", "", ""], style: sectionStyle, rowHeight: 26.0);
+    aSheet.merge(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 9), CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: 9));
 
-    _writeRow(aSheet, 12, ["Mã SP", "Giữ lại", "Chuyển đi"], style: headerStyle, rowHeight: 26.0);
+    _writeRow(aSheet, 10, ["Mã SP", "Chuyển đi", ""], style: headerStyle, rowHeight: 26.0);
+    aSheet.merge(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: 10), CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: 10));
 
-    final Map<String, dynamic> retainedA = Map<String, dynamic>.from(resultA["chi_tiết_giữ_lại"] ?? {});
     final Map<String, dynamic> forwardedA = Map<String, dynamic>.from(resultA["chi_tiết_chuyển"] ?? {});
-    final keysA = {...retainedA.keys, ...forwardedA.keys}.toList()..sort();
-    int rowIdxA = 13;
+    final keysA = forwardedA.keys.toList()..sort();
+    int rowIdxA = 11;
     for (final key in keysA) {
-      final rVal = (retainedA[key] ?? 0) * 1000;
       final fVal = (forwardedA[key] ?? 0) * 1000;
-      _writeRowWithStyles(aSheet, rowIdxA++, [key, _formatMoney(rVal), _formatMoney(fVal)], [labelStyle, valueStyle, valueStyle]);
+      _writeRowWithStyles(aSheet, rowIdxA, [key, _formatMoney(fVal), ""], [labelStyle, valueStyle, null]);
+      aSheet.merge(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: rowIdxA), CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: rowIdxA));
+      rowIdxA++;
     }
 
     // Sheet 3: Mã Loại B
@@ -195,34 +186,29 @@ class ExportService {
     _writeRowWithStyles(bSheet, 4, ["Doanh thu", _formatMoney(revB), ""], [labelStyle, valueStyle, null]);
     bSheet.merge(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: 4), CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: 4));
 
-    _writeRowWithStyles(bSheet, 5, ["Giữ tối đa / mã", _formatPoint(resultB["giaGiuMoiCon"] * 1000 ?? 0), ""], [labelStyle, valueStyle, null]);
+    _writeRowWithStyles(bSheet, 5, ["Hoa hồng", _formatMoney(commB), ""], [labelStyle, valueStyle, null]);
     bSheet.merge(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: 5), CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: 5));
 
-    _writeRowWithStyles(bSheet, 6, ["Tổng giữ lại (tiền)", _formatMoney(keptB), ""], [labelStyle, valueStyle, null]);
+    _writeRowWithStyles(bSheet, 6, ["Tổng chuyển đi (tiền)", _formatMoney(fwdB), ""], [labelStyle, valueStyle, null]);
     bSheet.merge(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: 6), CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: 6));
 
-    _writeRowWithStyles(bSheet, 7, ["Hoa hồng", _formatMoney(commB), ""], [labelStyle, valueStyle, null]);
+    _writeRowWithStyles(bSheet, 7, ["Thực chuyển (sau hồng)", _formatMoney(netFwdB), ""], [boldLabelStyle, boldValueStyle, null]);
     bSheet.merge(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: 7), CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: 7));
 
-    _writeRowWithStyles(bSheet, 8, ["Thực chuyển", _formatMoney(netFwdB), ""], [labelStyle, valueStyle, null]);
-    bSheet.merge(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: 8), CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: 8));
+    _writeRow(bSheet, 9, ["CHI TIẾT THEO MÃ SẢN PHẨM (LOẠI B)", "", ""], style: sectionStyle, rowHeight: 26.0);
+    bSheet.merge(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 9), CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: 9));
 
-    _writeRowWithStyles(bSheet, 9, ["Thực cầm", _formatMoney(holdB), ""], [boldLabelStyle, boldValueStyle, null]);
-    bSheet.merge(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: 9), CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: 9));
+    _writeRow(bSheet, 10, ["Mã SP", "Chuyển đi (điểm)", ""], style: headerStyle, rowHeight: 26.0);
+    bSheet.merge(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: 10), CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: 10));
 
-    _writeRow(bSheet, 11, ["CHI TIẾT THEO MÃ SẢN PHẨM (LOẠI B)", "", ""], style: sectionStyle, rowHeight: 26.0);
-    bSheet.merge(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 11), CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: 11));
-
-    _writeRow(bSheet, 12, ["Mã SP", "Giữ lại (điểm)", "Chuyển đi (điểm)"], style: headerStyle, rowHeight: 26.0);
-
-    final Map<String, dynamic> retainedB = Map<String, dynamic>.from(resultB["chi_tiết_giữ_lại"] ?? {});
     final Map<String, dynamic> forwardedB = Map<String, dynamic>.from(resultB["chi_tiết_chuyển"] ?? {});
-    final keysB = {...retainedB.keys, ...forwardedB.keys}.toList()..sort();
-    int rowIdxB = 13;
+    final keysB = forwardedB.keys.toList()..sort();
+    int rowIdxB = 11;
     for (final key in keysB) {
-      final rVal = retainedB[key] ?? 0;
       final fVal = forwardedB[key] ?? 0;
-      _writeRowWithStyles(bSheet, rowIdxB++, [key, _formatPoint(rVal), _formatPoint(fVal)], [labelStyle, valueStyle, valueStyle]);
+      _writeRowWithStyles(bSheet, rowIdxB, [key, _formatPoint(fVal), ""], [labelStyle, valueStyle, null]);
+      bSheet.merge(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: rowIdxB), CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: rowIdxB));
+      rowIdxB++;
     }
 
     final bytes = excel.encode();
@@ -250,9 +236,6 @@ class ExportService {
     final num revA = resultA["tongDoanhThu"] * 1000 ?? 0;
     final num revB = resultB["tongDoanhThu"] * 1000 ?? 0;
     final totalRevenue = revA + revB;
-    final keptA = resultA["tongGiuLai"] * 1000 ?? 0;
-    final keptB = resultB["tongGiuLai"] * 1000 ?? 0;
-    final totalKept = keptA + keptB;
     final fwdA = resultA["tongChuyen"] * 1000 ?? 0;
     final fwdB = resultB["tongChuyen"] * 1000 ?? 0;
     final totalForwarded = fwdA + fwdB;
@@ -294,8 +277,9 @@ class ExportService {
               ["Doanh thu A + B", _formatMoney(totalRevenue)],
               ["Thực chuyển chủ", _formatMoney(totalNetForwarded)],
               ["Tổng hoa hồng nhận", _formatMoney(totalCommission)],
-              ["Tổng giữ lại", _formatMoney(totalKept)],
               ["Tổng chuyển đi", _formatMoney(totalForwarded)],
+              ["Doanh thu loại A", _formatMoney(revA)],
+              ["Doanh thu loại B", _formatMoney(revB)],
             ],
             headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
           ),
@@ -308,9 +292,9 @@ class ExportService {
             headers: ["Chỉ số", "Giá trị"],
             data: [
               ["Doanh thu Loại A", _formatMoney(revA)],
-              ["Giữ tối đa / mã", _formatMoney(resultA["giaGiuMoiCon"] * 1000 ?? 0)],
-              ["Thực chuyển", _formatMoney(netFwdA)],
-              ["Thực cầm", _formatMoney(holdA)],
+              ["Hoa hồng", _formatMoney(commA)],
+              ["Tổng chuyển đi", _formatMoney(fwdA)],
+              ["Thực chuyển (sau hồng)", _formatMoney(netFwdA)],
             ],
             headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
           ),
@@ -323,9 +307,9 @@ class ExportService {
             headers: ["Chỉ số", "Giá trị"],
             data: [
               ["Doanh thu Loại B", _formatMoney(revB)],
-              ["Giữ tối đa / mã", _formatPoint(resultB["giaGiuMoiCon"] * 1000 ?? 0)],
-              ["Thực chuyển", _formatMoney(netFwdB)],
-              ["Thực cầm", _formatMoney(holdB)],
+              ["Hoa hồng", _formatMoney(commB)],
+              ["Tổng chuyển đi (tiền)", _formatMoney(fwdB)],
+              ["Thực chuyển (sau hồng)", _formatMoney(netFwdB)],
             ],
             headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
           ),
@@ -334,13 +318,11 @@ class ExportService {
     );
 
     // Page 2: Table of Product code details
-    final Map<String, dynamic> rA = Map<String, dynamic>.from(resultA["chi_tiết_giữ_lại"] ?? {});
     final Map<String, dynamic> fA = Map<String, dynamic>.from(resultA["chi_tiết_chuyển"] ?? {});
-    final keysA = {...rA.keys, ...fA.keys}.toList()..sort();
+    final keysA = fA.keys.toList()..sort();
 
-    final Map<String, dynamic> rB = Map<String, dynamic>.from(resultB["chi_tiết_giữ_lại"] ?? {});
     final Map<String, dynamic> fB = Map<String, dynamic>.from(resultB["chi_tiết_chuyển"] ?? {});
-    final keysB = {...rB.keys, ...fB.keys}.toList()..sort();
+    final keysB = fB.keys.toList()..sort();
 
     pdf.addPage(
       pw.MultiPage(
@@ -352,11 +334,10 @@ class ExportService {
             pw.Text("Không có dữ liệu loại A")
           else
             pw.TableHelper.fromTextArray(
-              headers: ["Mã SP", "Giữ lại", "Chuyển đi"],
+              headers: ["Mã SP", "Chuyển đi"],
               data: keysA.map((key) {
-                final rVal = (rA[key] ?? 0) * 1000;
                 final fVal = (fA[key] ?? 0) * 1000;
-                return [key, _formatMoney(rVal), _formatMoney(fVal)];
+                return [key, _formatMoney(fVal)];
               }).toList(),
               headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
             ),
@@ -368,11 +349,10 @@ class ExportService {
             pw.Text("Không có dữ liệu loại B")
           else
             pw.TableHelper.fromTextArray(
-              headers: ["Mã SP", "Giữ lại (điểm)", "Chuyển đi (điểm)"],
+              headers: ["Mã SP", "Chuyển đi (điểm)"],
               data: keysB.map((key) {
-                final rVal = rB[key] ?? 0;
                 final fVal = fB[key] ?? 0;
-                return [key, _formatPoint(rVal), _formatPoint(fVal)];
+                return [key, _formatPoint(fVal)];
               }).toList(),
               headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
             ),
@@ -676,5 +656,399 @@ class ExportService {
         cell.cellStyle = style;
       }
     }
+  }
+
+  // --- COPY TEXT BUILDERS ---
+
+  static String buildReportCopyText({
+    required Map<String, dynamic> resultA,
+    required Map<String, dynamic> resultB,
+    required String date,
+  }) {
+    final num revA = resultA["tongDoanhThu"] * 1000 ?? 0;
+    final num revB = resultB["tongDoanhThu"] * 1000 ?? 0;
+    final totalRevenue = revA + revB;
+    final fwdA = resultA["tongChuyen"] * 1000 ?? 0;
+    final fwdB = resultB["tongChuyen"] * 1000 ?? 0;
+    final totalForwarded = fwdA + fwdB;
+    final commA = resultA["hoa_hong"] * 1000 ?? 0;
+    final commB = (resultB["hoa_hồng"] ?? resultB["hoa_hong"] ?? 0) * 1000;
+    final totalCommission = commA + commB;
+    final netFwdA = resultA["tongThucChuyen"] * 1000 ?? 0;
+    final netFwdB = resultB["tongThucChuyen"] * 1000 ?? 0;
+    final totalNetForwarded = netFwdA + netFwdB;
+    final holdA = resultA["cam"] * 1000 ?? 0;
+    final holdB = resultB["cam"] * 1000 ?? 0;
+    final totalHold = holdA + holdB;
+
+    final Map<String, dynamic> fA = Map<String, dynamic>.from(resultA["chi_tiết_chuyển"] ?? {});
+    final Map<String, dynamic> fB = Map<String, dynamic>.from(resultB["chi_tiết_chuyển"] ?? {});
+    final keysA = fA.keys.toList()..sort();
+    final keysB = fB.keys.toList()..sort();
+
+    final buf = StringBuffer();
+    buf.writeln("=== BÁO CÁO TÀI CHÍNH TỔNG HỢP ===");
+    buf.writeln("Ngày: $date");
+    buf.writeln();
+    buf.writeln("--- TỔNG QUAN ---");
+    buf.writeln("TỔNG THU NHẬP ĐẠI LÝ (CẢM): ${_formatMoney(totalHold)}");
+    buf.writeln("Doanh thu A + B: ${_formatMoney(totalRevenue)}");
+    buf.writeln("Thực chuyển chủ: ${_formatMoney(totalNetForwarded)}");
+    buf.writeln("Tổng hoa hồng nhận: ${_formatMoney(totalCommission)}");
+    buf.writeln("Tổng chuyển đi: ${_formatMoney(totalForwarded)}");
+    buf.writeln("Doanh thu loại A: ${_formatMoney(revA)}");
+    buf.writeln("Doanh thu loại B: ${_formatMoney(revB)}");
+    buf.writeln();
+    buf.writeln("--- CHI TIẾT MÃ LOẠI A ---");
+    buf.writeln("Doanh thu: ${_formatMoney(revA)}");
+    buf.writeln("Hoa hồng: ${_formatMoney(commA)}");
+    buf.writeln("Tổng chuyển đi: ${_formatMoney(fwdA)}");
+    buf.writeln("Thực chuyển (sau hồng): ${_formatMoney(netFwdA)}");
+    if (keysA.isNotEmpty) {
+      buf.writeln();
+      buf.writeln("Chi tiết theo mã (Loại A):");
+      for (final key in keysA) {
+        final fVal = (fA[key] ?? 0) * 1000;
+        buf.writeln("  $key: ${_formatMoney(fVal)}");
+      }
+    }
+    buf.writeln();
+    buf.writeln("--- CHI TIẾT MÃ LOẠI B ---");
+    buf.writeln("Doanh thu: ${_formatMoney(revB)}");
+    buf.writeln("Hoa hồng: ${_formatMoney(commB)}");
+    buf.writeln("Tổng chuyển đi (tiền): ${_formatMoney(fwdB)}");
+    buf.writeln("Thực chuyển (sau hồng): ${_formatMoney(netFwdB)}");
+    if (keysB.isNotEmpty) {
+      buf.writeln();
+      buf.writeln("Chi tiết theo mã (Loại B):");
+      for (final key in keysB) {
+        final fVal = fB[key] ?? 0;
+        buf.writeln("  $key: ${_formatPoint(fVal)}");
+      }
+    }
+    return buf.toString();
+  }
+
+  static String buildSettlementCopyText({
+    required Map<String, dynamic> result,
+    required String date,
+  }) {
+    final isProfit = result["profit"] as bool;
+    final type = result["type"] as String;
+    final buf = StringBuffer();
+    buf.writeln("=== BÁO CÁO BỒI HOÀN ===");
+    buf.writeln("Ngày: $date");
+    buf.writeln();
+    buf.writeln(isProfit ? "KẾt quả: LợI NHUẬN CÒN LẠI" : "KẾt quả: THÂM HỤT");
+    buf.writeln("Số tiền: ${_formatMoney(result["remaining"] * 1000)}");
+    buf.writeln();
+    buf.writeln("Loại Mã: Mã Loại $type");
+    buf.writeln("Mã sản phẩm: ${result["productCode"]}");
+    if (type == "B") {
+      buf.writeln("Hệ số bồi hoàn: ${result["multiplier"]}");
+      buf.writeln("Giá bán / điểm: ${_formatMoney(result["ticketPrice"])}");
+    }
+    buf.writeln("Tỉ lệ bồi hoàn: ${result["refundRate"]}");
+    buf.writeln("Tổng tiền ban đầu: ${_formatMoney(result["totalRetained"] * 1000)}");
+    buf.writeln("Tiền phải bồi hoàn: ${_formatMoney(result["refundMoney"] * 1000)}");
+    buf.writeln("Còn lại (Sau bồi hoàn): ${_formatMoney(result["remaining"] * 1000)}");
+    buf.writeln();
+    buf.writeln(isProfit
+        ? "Kết luận: Sau khi bồi hoàn, đại lý vẫn bảo toàn được lợi nhuận."
+        : "Kết luận: Sau khi bồi hoàn, tổng thu chi bị âm (đại lý bị lỗ).");
+    return buf.toString();
+  }
+
+  static Future<void> exportOrdersToExcel({
+    required List<Order> orders,
+    required Configuration config,
+    required String date,
+  }) async {
+    final Excel excel = Excel.createExcel();
+    excel.delete('Sheet1');
+
+    final headerStyle = CellStyle(
+      bold: true,
+      fontSize: 11,
+      fontColorHex: ExcelColor.fromHexString("#FFFFFF"),
+      backgroundColorHex: ExcelColor.fromHexString("#2563EB"),
+      horizontalAlign: HorizontalAlign.Center,
+      verticalAlign: VerticalAlign.Center,
+    );
+    final labelStyle = CellStyle(
+      fontSize: 11,
+      fontColorHex: ExcelColor.fromHexString("#1F2937"),
+      horizontalAlign: HorizontalAlign.Left,
+      verticalAlign: VerticalAlign.Center,
+    );
+    final valueStyle = CellStyle(
+      fontSize: 11,
+      fontColorHex: ExcelColor.fromHexString("#1F2937"),
+      horizontalAlign: HorizontalAlign.Right,
+      verticalAlign: VerticalAlign.Center,
+    );
+    final boldLabelStyle = CellStyle(
+      bold: true,
+      fontSize: 11,
+      fontColorHex: ExcelColor.fromHexString("#1E3A8A"),
+      backgroundColorHex: ExcelColor.fromHexString("#EFF6FF"),
+      horizontalAlign: HorizontalAlign.Left,
+      verticalAlign: VerticalAlign.Center,
+    );
+    final boldValueStyle = CellStyle(
+      bold: true,
+      fontSize: 11,
+      fontColorHex: ExcelColor.fromHexString("#1E3A8A"),
+      backgroundColorHex: ExcelColor.fromHexString("#EFF6FF"),
+      horizontalAlign: HorizontalAlign.Right,
+      verticalAlign: VerticalAlign.Center,
+    );
+    final sectionStyle = CellStyle(
+      bold: true,
+      fontSize: 12,
+      fontColorHex: ExcelColor.fromHexString("#1E3A8A"),
+      backgroundColorHex: ExcelColor.fromHexString("#DBEAFE"),
+      horizontalAlign: HorizontalAlign.Left,
+      verticalAlign: VerticalAlign.Center,
+    );
+
+    // Calculate totals
+    final typeA = <String, double>{};
+    final typeB = <String, int>{};
+    for (final o in orders) {
+      if (o.type == "A") {
+        typeA[o.productCode] = (typeA[o.productCode] ?? 0) + o.amount;
+      } else {
+        typeB[o.productCode] = (typeB[o.productCode] ?? 0) + o.unit;
+      }
+    }
+
+    double totalA = 0;
+    for (final val in typeA.values) {
+      totalA += val;
+    }
+    final commissionA = totalA * config.commissionRateA;
+
+    int totalPointB = 0;
+    double totalMoneyB = 0;
+    for (final e in typeB.entries) {
+      totalPointB += e.value;
+      totalMoneyB += e.value * config.ticketPriceB;
+    }
+    final commissionB = totalPointB * config.commissionPerPointB;
+
+    final totalRevenue = totalA + totalMoneyB;
+    final totalCommission = commissionA + commissionB;
+    final netTransfer = totalRevenue - totalCommission;
+
+    // Sheet 1: Tổng quan
+    final Sheet overviewSheet = excel['Tổng quan'];
+    overviewSheet.setColumnWidth(0, 35.0);
+    overviewSheet.setColumnWidth(1, 25.0);
+
+    _writeExcelHeader(overviewSheet, "TỔNG QUAN ĐƠN HÀNG", date, 2);
+    _writeRow(overviewSheet, 3, ["Chỉ số", "Giá trị"], style: headerStyle, rowHeight: 28.0);
+    _writeRowWithStyles(overviewSheet, 4, ["TỔNG DOANH THU", _formatMoney(totalRevenue * 1000)], [boldLabelStyle, boldValueStyle], rowHeight: 26.0);
+    _writeRowWithStyles(overviewSheet, 5, ["Tổng Hoa Hồng", _formatMoney(totalCommission * 1000)], [labelStyle, valueStyle]);
+    _writeRowWithStyles(overviewSheet, 6, ["Thực Chuyển", _formatMoney(netTransfer * 1000)], [boldLabelStyle, boldValueStyle], rowHeight: 26.0);
+    _writeRowWithStyles(overviewSheet, 7, ["Tổng Doanh Thu A", _formatMoney(totalA * 1000)], [labelStyle, valueStyle]);
+    _writeRowWithStyles(overviewSheet, 8, ["Tổng Doanh Thu B", _formatMoney(totalMoneyB * 1000)], [labelStyle, valueStyle]);
+
+    // Sheet 2: Loại A
+    final Sheet aSheet = excel['Đơn hàng Loại A'];
+    aSheet.setColumnWidth(0, 25.0);
+    aSheet.setColumnWidth(1, 25.0);
+    _writeExcelHeader(aSheet, "ĐƠN HÀNG MÃ LOẠI A", date, 2);
+    _writeRow(aSheet, 3, ["Chỉ số / Mã SP", "Giá trị"], style: headerStyle, rowHeight: 28.0);
+    _writeRowWithStyles(aSheet, 4, ["Tổng Doanh Thu A", _formatMoney(totalA * 1000)], [boldLabelStyle, boldValueStyle]);
+    _writeRowWithStyles(aSheet, 5, ["Hoa hồng A (${(config.commissionRateA * 100).toStringAsFixed(0)}%)", _formatMoney(commissionA * 1000)], [labelStyle, valueStyle]);
+
+    _writeRow(aSheet, 7, ["CHI TIẾT ĐƠN HÀNG LOẠI A", ""], style: sectionStyle, rowHeight: 26.0);
+    aSheet.merge(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 7), CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: 7));
+    _writeRow(aSheet, 8, ["Mã SP", "Doanh thu"], style: headerStyle, rowHeight: 26.0);
+    int rowIdxA = 9;
+    final keysA = typeA.keys.toList()..sort();
+    for (final key in keysA) {
+      _writeRowWithStyles(aSheet, rowIdxA++, [key, _formatMoney(typeA[key]! * 1000)], [labelStyle, valueStyle]);
+    }
+
+    // Sheet 3: Loại B
+    final Sheet bSheet = excel['Đơn hàng Loại B'];
+    bSheet.setColumnWidth(0, 25.0);
+    bSheet.setColumnWidth(1, 25.0);
+    bSheet.setColumnWidth(2, 25.0);
+    _writeExcelHeader(bSheet, "ĐƠN HÀNG MÃ LOẠI B", date, 3);
+    _writeRow(bSheet, 3, ["Chỉ số / Mã SP", "Điểm", "Giá trị"], style: headerStyle, rowHeight: 28.0);
+    _writeRowWithStyles(bSheet, 4, ["Tổng Doanh Thu B", "", _formatMoney(totalMoneyB * 1000)], [boldLabelStyle, null, boldValueStyle]);
+    _writeRowWithStyles(bSheet, 5, ["Tổng Điểm B", "$totalPointB điểm", ""], [labelStyle, valueStyle, null]);
+    _writeRowWithStyles(bSheet, 6, ["Hoa hồng B (${_formatMoney(config.commissionPerPointB * 1000)}/điểm)", _formatMoney(commissionB * 1000), ""], [labelStyle, valueStyle, null]);
+
+    _writeRow(bSheet, 8, ["CHI TIẾT ĐƠN HÀNG LOẠI B", "", ""], style: sectionStyle, rowHeight: 26.0);
+    bSheet.merge(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 8), CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: 8));
+    _writeRow(bSheet, 9, ["Mã SP", "Điểm", "Doanh thu"], style: headerStyle, rowHeight: 26.0);
+    int rowIdxB = 10;
+    final keysB = typeB.keys.toList()..sort();
+    for (final key in keysB) {
+      final pts = typeB[key]!;
+      final money = pts * config.ticketPriceB;
+      _writeRowWithStyles(bSheet, rowIdxB++, [key, "$pts điểm", _formatMoney(money * 1000)], [labelStyle, valueStyle, valueStyle]);
+    }
+
+    final bytes = excel.encode();
+    if (bytes != null) {
+      await ExportHelper.saveAndShareFile(
+        bytes: bytes,
+        filename: "bao_cao_don_hang_$date.xlsx",
+        mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      );
+    }
+  }
+
+  static Future<void> exportOrdersToPdf({
+    required List<Order> orders,
+    required Configuration config,
+    required String date,
+  }) async {
+    final pdf = pw.Document(
+      theme: pw.ThemeData.withFont(
+        base: await PdfGoogleFonts.robotoRegular(),
+        bold: await PdfGoogleFonts.robotoBold(),
+      ),
+    );
+
+    // Calculate totals
+    final typeA = <String, double>{};
+    final typeB = <String, int>{};
+    for (final o in orders) {
+      if (o.type == "A") {
+        typeA[o.productCode] = (typeA[o.productCode] ?? 0) + o.amount;
+      } else {
+        typeB[o.productCode] = (typeB[o.productCode] ?? 0) + o.unit;
+      }
+    }
+
+    double totalA = 0;
+    for (final val in typeA.values) {
+      totalA += val;
+    }
+    final commissionA = totalA * config.commissionRateA;
+
+    int totalPointB = 0;
+    double totalMoneyB = 0;
+    for (final e in typeB.entries) {
+      totalPointB += e.value;
+      totalMoneyB += e.value * config.ticketPriceB;
+    }
+    final commissionB = totalPointB * config.commissionPerPointB;
+
+    final totalRevenue = totalA + totalMoneyB;
+    final totalCommission = commissionA + commissionB;
+    final netTransfer = totalRevenue - totalCommission;
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        build: (context) => [
+          pw.Header(
+            level: 0,
+            child: pw.Center(
+              child: pw.Column(
+                children: [
+                  pw.Text("BÁO CÁO ĐƠN HÀNG NGÀY", style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
+                  pw.SizedBox(height: 5),
+                  pw.Text("Ngày báo cáo: $date", style: const pw.TextStyle(fontSize: 12)),
+                ],
+              ),
+            ),
+          ),
+          pw.SizedBox(height: 20),
+
+          pw.Text("1. Tổng quan đơn hàng", style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 8),
+          pw.TableHelper.fromTextArray(
+            headers: ["Chỉ số", "Giá trị"],
+            data: [
+              ["TỔNG DOANH THU", _formatMoney(totalRevenue * 1000)],
+              ["Tổng Hoa Hồng", _formatMoney(totalCommission * 1000)],
+              ["Thực Chuyển", _formatMoney(netTransfer * 1000)],
+              ["Doanh thu loại A", _formatMoney(totalA * 1000)],
+              ["Doanh thu loại B", _formatMoney(totalMoneyB * 1000)],
+            ],
+            headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+          ),
+          pw.SizedBox(height: 20),
+
+          pw.Text("2. Chi tiết mã loại A", style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 8),
+          pw.TableHelper.fromTextArray(
+            headers: ["Chỉ số", "Giá trị"],
+            data: [
+              ["Doanh thu Loại A", _formatMoney(totalA * 1000)],
+              ["Hoa hồng A (${(config.commissionRateA * 100).toStringAsFixed(0)}%)", _formatMoney(commissionA * 1000)],
+            ],
+            headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+          ),
+          pw.SizedBox(height: 20),
+
+          pw.Text("3. Chi tiết mã loại B", style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 8),
+          pw.TableHelper.fromTextArray(
+            headers: ["Chỉ số", "Giá trị"],
+            data: [
+              ["Doanh thu Loại B", _formatMoney(totalMoneyB * 1000)],
+              ["Tổng Điểm B", "$totalPointB điểm"],
+              ["Hoa hồng B (${_formatMoney(config.commissionPerPointB * 1000)}/điểm)", _formatMoney(commissionB * 1000)],
+            ],
+            headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+          ),
+        ],
+      ),
+    );
+
+    final keysA = typeA.keys.toList()..sort();
+    final keysB = typeB.keys.toList()..sort();
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        build: (context) => [
+          pw.Text("4. Chi tiết mã SP (Loại A)", style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 8),
+          if (keysA.isEmpty)
+            pw.Text("Không có dữ liệu loại A")
+          else
+            pw.TableHelper.fromTextArray(
+              headers: ["Mã SP", "Doanh thu"],
+              data: keysA.map((key) {
+                return [key, _formatMoney(typeA[key]! * 1000)];
+              }).toList(),
+              headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+            ),
+          pw.SizedBox(height: 25),
+
+          pw.Text("5. Chi tiết mã SP (Loại B)", style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 8),
+          if (keysB.isEmpty)
+            pw.Text("Không có dữ liệu loại B")
+          else
+            pw.TableHelper.fromTextArray(
+              headers: ["Mã SP", "Điểm", "Doanh thu"],
+              data: keysB.map((key) {
+                final pts = typeB[key]!;
+                final money = pts * config.ticketPriceB;
+                return [key, "$pts điểm", _formatMoney(money * 1000)];
+              }).toList(),
+              headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+            ),
+        ],
+      ),
+    );
+
+    final bytes = await pdf.save();
+    await ExportHelper.saveAndShareFile(
+      bytes: bytes,
+      filename: "bao_cao_don_hang_$date.pdf",
+      mimeType: "application/pdf",
+    );
   }
 }
