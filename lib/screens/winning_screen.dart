@@ -548,11 +548,14 @@ class _WinningScreenState extends State<WinningScreen> {
                           color: Colors.grey[600],
                         ),
                         const SizedBox(width: 4),
-                        Text(
-                          "Loại $selectedType đã được xác nhận hôm nay",
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
+                        Flexible(
+                          child: Text(
+                            "Loại $selectedType đã được xác nhận hôm nay",
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
                           ),
                         ),
                       ],
@@ -1090,11 +1093,14 @@ class _WinnerGroupCardState extends State<_WinnerGroupCard> {
                         ],
                       ),
                     ),
-                    Text(
-                      "${money(t.payoutAmount)} đ",
-                      style: const TextStyle(
-                        color: Colors.red,
-                        fontWeight: FontWeight.bold,
+                    Flexible(
+                      child: Text(
+                        "${money(t.payoutAmount)} đ",
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ],

@@ -113,7 +113,8 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
     if (selectedType == "A") {
       if (_amountUnit == 1.0) {
         title = "Định dạng nhập Loại A: [mã] x [số tiền] (Đơn vị: Nghìn đồng)";
-        content = "• Mã phải từ 00 đến 99.\n"
+        content =
+            "• Mã phải từ 00 đến 99.\n"
             "• Quy ước nhập tiền:\n"
             "  - 10 = 10.000 VNĐ\n"
             "  - 100 = 100.000 VNĐ\n"
@@ -126,7 +127,8 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
             "abc x 10 (Mã không phải số)";
       } else {
         title = "Định dạng nhập Loại A: [mã] x [số tiền] (Đơn vị: Đồng)";
-        content = "• Mã phải từ 00 đến 99.\n"
+        content =
+            "• Mã phải từ 00 đến 99.\n"
             "• Quy ước nhập tiền:\n"
             "  - 10000 = 10.000 VNĐ\n"
             "  - 100000 = 100.000 VNĐ\n"
@@ -140,7 +142,8 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
       }
     } else {
       title = "Định dạng nhập Loại B: [mã] x [điểm] (Đơn vị: Điểm)";
-      content = "• Mã phải từ 00 đến 99.\n"
+      content =
+          "• Mã phải từ 00 đến 99.\n"
           "• Nhập số điểm trực tiếp:\n"
           "  - 10 = 10 điểm\n"
           "  - 100 = 100 điểm\n\n"
@@ -378,32 +381,31 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                       ),
                     ],
                     const SizedBox(height: 8),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton.icon(
-                        icon: Icon(
-                          showAddCustomer ? Icons.close : Icons.person_add,
-                          size: 18,
+                    if (customers.isNotEmpty)
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton.icon(
+                          onPressed: () {
+                            setState(() {
+                              showAddCustomer = !showAddCustomer;
+
+                              if (!showAddCustomer) {
+                                customerNameController.clear();
+                                phoneController.clear();
+                              }
+                            });
+                          },
+                          icon: Icon(
+                            showAddCustomer ? Icons.close : Icons.person_add,
+                            size: 18,
+                          ),
+                          label: Text(
+                            showAddCustomer
+                                ? "Hủy thêm khách"
+                                : "Thêm khách mới",
+                          ),
                         ),
-                        label: Text(
-                          showAddCustomer ? "Hủy tạo khách" : "Thêm khách mới",
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            showAddCustomer = !showAddCustomer;
-                            if (showAddCustomer) {
-                              selectedCustomer = null;
-                              customerNameController.clear();
-                              phoneController.clear();
-                            } else {
-                              customerNameController.clear();
-                              phoneController.clear();
-                            }
-                          });
-                        },
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -492,9 +494,7 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                             color: colorScheme.primary,
                             size: 18,
                           ),
-
                           const SizedBox(width: 6),
-
                           Text(
                             "Đơn vị tiền:",
                             style: TextStyle(
@@ -503,45 +503,44 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                               color: colorScheme.onSurfaceVariant,
                             ),
                           ),
+                        ],
+                      ),
 
-                          const SizedBox(width: 12),
+                      const SizedBox(height: 8),
 
-                          Expanded(
-                            child: DropdownButtonFormField<double>(
-                              initialValue: _amountUnit,
-                              decoration: InputDecoration(
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 8,
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
-                              items: const [
-                                DropdownMenuItem(
-                                  value: 1.0,
-                                  child: Text(
-                                    'Nghìn đồng (×1.000)',
-                                    style: TextStyle(fontSize: 13),
-                                  ),
-                                ),
-                                DropdownMenuItem(
-                                  value: 0.001,
-                                  child: Text(
-                                    'Đồng (×1)',
-                                    style: TextStyle(fontSize: 13),
-                                  ),
-                                ),
-                              ],
-                              onChanged: (v) {
-                                setState(() {
-                                  _amountUnit = v ?? 1.0;
-                                });
-                              },
+                      DropdownButtonFormField<double>(
+                        initialValue: _amountUnit,
+                        isExpanded: true,
+                        decoration: InputDecoration(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        items: const [
+                          DropdownMenuItem(
+                            value: 1.0,
+                            child: Text(
+                              'Nghìn đồng (×1.000)',
+                              style: TextStyle(fontSize: 13),
+                            ),
+                          ),
+                          DropdownMenuItem(
+                            value: 0.001,
+                            child: Text(
+                              'Đồng (×1)',
+                              style: TextStyle(fontSize: 13),
                             ),
                           ),
                         ],
+                        onChanged: (v) {
+                          setState(() {
+                            _amountUnit = v ?? 1.0;
+                          });
+                        },
                       ),
                     ],
                     const SizedBox(height: 20),
@@ -600,8 +599,8 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                       decoration: InputDecoration(
                         hintText: selectedType == "A"
                             ? (_amountUnit == 1.0
-                                ? "Dán hoặc nhập đơn hàng Loại A (Nghìn đồng)...\nVí dụ:\n90 x 10\n05 x 100"
-                                : "Dán hoặc nhập đơn hàng Loại A (Đồng)...\nVí dụ:\n90 x 10000\n05 x 100000")
+                                  ? "Dán hoặc nhập đơn hàng Loại A (Nghìn đồng)...\nVí dụ:\n90 x 10\n05 x 100"
+                                  : "Dán hoặc nhập đơn hàng Loại A (Đồng)...\nVí dụ:\n90 x 10000\n05 x 100000")
                             : "Dán hoặc nhập đơn hàng Loại B (Điểm)...\nVí dụ:\n90 x 10\n05 x 100",
                         hintStyle: TextStyle(
                           color: colorScheme.onSurfaceVariant.withValues(
@@ -628,8 +627,8 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                         fillColor: colorScheme.surfaceContainerLowest,
                         helperText: selectedType == "A"
                             ? (_amountUnit == 1.0
-                                ? "Lưu ý nhập tiền: 10 = 10.000 VNĐ, 100 = 100.000 VNĐ. Phân cách: x, *, -, dấu cách hoặc :"
-                                : "Lưu ý nhập tiền: Nhập đúng số tiền đồng (tối thiểu 1000). Ví dụ: 10000 = 10.000 VNĐ.")
+                                  ? "Lưu ý nhập tiền: 10 = 10.000 VNĐ, 100 = 100.000 VNĐ. Phân cách: x, *, -, dấu cách hoặc :"
+                                  : "Lưu ý nhập tiền: Nhập đúng số tiền đồng (tối thiểu 1000). Ví dụ: 10000 = 10.000 VNĐ.")
                             : "Lưu ý nhập điểm: Nhập trực tiếp số điểm. Ví dụ: 10 = 10 điểm.",
                         helperMaxLines: 2,
                       ),
