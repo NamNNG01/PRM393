@@ -15,7 +15,8 @@ import '../repositories/order_repository.dart';
 import '../repositories/customer_repository.dart';
 import '../repositories/ticket_repository.dart';
 import '../repositories/winning_repository.dart';
-
+import '../repositories/winning_result_repository.dart';
+import '../models/winning_result.dart';
 import '../utils/date_util.dart';
 
 class WinningScreen extends StatefulWidget {
@@ -59,6 +60,7 @@ class _WinningScreenState extends State<WinningScreen> {
   final customerRepo = CustomerRepository();
   final ticketRepo = TicketRepository();
   final winningRepo = WinningRepository();
+  final winningResultRepo = WinningResultRepository();
   late Configuration config;
 
   String selectedType = "A";
@@ -97,24 +99,28 @@ class _WinningScreenState extends State<WinningScreen> {
     final orders = orderRepo.getByBusinessDate(today);
 
     if (selectedType == "A") {
-      final existedA = winningRepo
-          .getByDate(today)
-          .where((e) => e.ticketType == "A")
-          .toList();
-
-      if (existedA.isNotEmpty) {
+      if (winningResultRepo.exists(today, "A")) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Loại A chỉ được xác nhận 1 lần/ngày")),
+          const SnackBar(content: Text("Loại A đã được xác nhận hôm nay")),
         );
+
         return;
       }
+
       final number = input;
+
       if (!isValidNumber(number)) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Số trúng phải từ 00 đến 99")),
         );
         return;
       }
+
+      await winningResultRepo.saveOrUpdate(
+        businessDate: today,
+        ticketType: "A",
+        winningNumbers: number,
+      );
 
       final matched = orders.where(
         (o) => o.type == "A" && o.productCode == number,
@@ -158,7 +164,13 @@ class _WinningScreenState extends State<WinningScreen> {
           return;
         }
       }
+      await winningResultRepo.addNumbers(businessDate: today, numbers: numbers);
       for (final number in numbers) {
+        final existed = winningRepo
+            .getByDate(today)
+            .any((e) => e.ticketType == "B" && e.winningNumber == number);
+
+        if (existed) continue;
         final matched = orders.where(
           (o) => o.type == "B" && o.productCode == number,
         );
@@ -194,6 +206,13 @@ class _WinningScreenState extends State<WinningScreen> {
 
     winners = winningRepo.getByDate(DateUtil.today());
     config = Hive.box<Configuration>(HiveBoxes.configBox).values.first;
+    final today = DateUtil.today();
+
+    final result = winningResultRepo.getResult(today, "A");
+
+    if (result != null) {
+      winningController.text = result.winningNumbers;
+    }
   }
 
   @override
@@ -220,8 +239,17 @@ class _WinningScreenState extends State<WinningScreen> {
                       DropdownMenuItem(value: "B", child: Text("Loại B")),
                     ],
                     onChanged: (v) {
+                      final type = v!;
+
                       setState(() {
-                        selectedType = v!;
+                        selectedType = type;
+
+                        final result = winningResultRepo.getResult(
+                          DateUtil.today(),
+                          type,
+                        );
+
+                        winningController.text = result?.winningNumbers ?? "";
                       });
                     },
                   ),
@@ -233,6 +261,13 @@ class _WinningScreenState extends State<WinningScreen> {
                   flex: 4,
                   child: TextField(
                     controller: winningController,
+
+                    enabled:
+                        winningResultRepo.getResult(
+                          DateUtil.today(),
+                          selectedType,
+                        ) ==
+                        null,
                     decoration: InputDecoration(
                       border: const OutlineInputBorder(),
                       labelText: selectedType == "A"

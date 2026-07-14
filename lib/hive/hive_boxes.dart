@@ -7,4 +7,5 @@ class HiveBoxes {
   static const customerBox = "customers";
   static const ticketBox = "tickets";
   static const winningBox = "winning_box";
+  static const winningResultBox = "winning_result_box";
 }

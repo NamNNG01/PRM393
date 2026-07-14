@@ -10,6 +10,7 @@ import 'screens/home.dart';
 import 'models/winning_ticket.dart';
 import 'hive/hive_boxes.dart';
 import 'hive/config_box.dart';
+import 'models/winning_result.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,9 +30,10 @@ void main() async {
   await Hive.openBox<Customer>(HiveBoxes.customerBox);
   final configBox = Hive.box<Configuration>(HiveBoxes.configBox);
   Hive.registerAdapter(WinningTicketAdapter());
+  Hive.registerAdapter(WinningResultAdapter());
 
   await Hive.openBox<WinningTicket>(HiveBoxes.winningBox);
-
+  await Hive.openBox<WinningResult>(HiveBoxes.winningResultBox);
   if (configBox.isEmpty) {
     configBox.add(
       Configuration(
