@@ -1216,12 +1216,37 @@ class _WinnerGroupCardState extends State<_WinnerGroupCard> {
               const SizedBox(height: 12),
 
               if (group.tickets.first.proofImageBytes != null)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.memory(
-                    group.tickets.first.proofImageBytes!,
-                    width: double.infinity,
-                    fit: BoxFit.contain,
+                Center(
+                  child: GestureDetector(
+                    onTap: () {
+                      showDialog(
+                        context: context,
+                        barrierColor: Colors.black87,
+                        builder: (_) => Dialog(
+                          backgroundColor: Colors.transparent,
+                          insetPadding: const EdgeInsets.all(16),
+                          child: InteractiveViewer(
+                            minScale: 1,
+                            maxScale: 5,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.memory(
+                                group.tickets.first.proofImageBytes!,
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.memory(
+                        group.tickets.first.proofImageBytes!,
+                        height: 180,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
                   ),
                 ),
 
