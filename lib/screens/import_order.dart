@@ -492,9 +492,7 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                             color: colorScheme.primary,
                             size: 18,
                           ),
-
                           const SizedBox(width: 6),
-
                           Text(
                             "Đơn vị tiền:",
                             style: TextStyle(
@@ -503,45 +501,44 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                               color: colorScheme.onSurfaceVariant,
                             ),
                           ),
+                        ],
+                      ),
 
-                          const SizedBox(width: 12),
+                      const SizedBox(height: 8),
 
-                          Expanded(
-                            child: DropdownButtonFormField<double>(
-                              initialValue: _amountUnit,
-                              decoration: InputDecoration(
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 8,
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
-                              items: const [
-                                DropdownMenuItem(
-                                  value: 1.0,
-                                  child: Text(
-                                    'Nghìn đồng (×1.000)',
-                                    style: TextStyle(fontSize: 13),
-                                  ),
-                                ),
-                                DropdownMenuItem(
-                                  value: 0.001,
-                                  child: Text(
-                                    'Đồng (×1)',
-                                    style: TextStyle(fontSize: 13),
-                                  ),
-                                ),
-                              ],
-                              onChanged: (v) {
-                                setState(() {
-                                  _amountUnit = v ?? 1.0;
-                                });
-                              },
+                      DropdownButtonFormField<double>(
+                        initialValue: _amountUnit,
+                        isExpanded: true,
+                        decoration: InputDecoration(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        items: const [
+                          DropdownMenuItem(
+                            value: 1.0,
+                            child: Text(
+                              'Nghìn đồng (×1.000)',
+                              style: TextStyle(fontSize: 13),
+                            ),
+                          ),
+                          DropdownMenuItem(
+                            value: 0.001,
+                            child: Text(
+                              'Đồng (×1)',
+                              style: TextStyle(fontSize: 13),
                             ),
                           ),
                         ],
+                        onChanged: (v) {
+                          setState(() {
+                            _amountUnit = v ?? 1.0;
+                          });
+                        },
                       ),
                     ],
                     const SizedBox(height: 20),

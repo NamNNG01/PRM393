@@ -290,20 +290,27 @@ class SettlementReportScreen extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
+          Expanded(
+            child: Text(
+              title,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: isHighlight ? FontWeight.bold : FontWeight.w600,
-              color: valueColor ?? Colors.black87,
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: isHighlight ? FontWeight.bold : FontWeight.w600,
+                color: valueColor ?? Colors.black87,
+              ),
             ),
           ),
         ],

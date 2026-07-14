@@ -607,14 +607,17 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                                                 .withValues(alpha: 0.7),
                                           ),
                                           const SizedBox(width: 4),
-                                          Text(
-                                            customer.phone.isEmpty
-                                                ? 'Chưa có SĐT'
-                                                : customer.phone,
-                                            style: TextStyle(
-                                              color:
-                                                  colorScheme.onSurfaceVariant,
-                                              fontSize: 13,
+                                          Expanded(
+                                            child: Text(
+                                              customer.phone.isEmpty
+                                                  ? 'Chưa có SĐT'
+                                                  : customer.phone,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                color: colorScheme
+                                                    .onSurfaceVariant,
+                                                fontSize: 13,
+                                              ),
                                             ),
                                           ),
                                         ],
