@@ -9,6 +9,7 @@ import '../models/winning_ticket.dart';
 import 'package:hive/hive.dart';
 import '../models/configuration.dart';
 import '../hive/hive_boxes.dart';
+import 'package:intl/intl.dart';
 
 import '../repositories/order_repository.dart';
 import '../repositories/customer_repository.dart';
@@ -24,6 +25,33 @@ class WinningScreen extends StatefulWidget {
   State<WinningScreen> createState() => _WinningScreenState();
 }
 
+String money(num value) {
+  return NumberFormat("#,###", "vi_VN").format(value);
+}
+
+class WinnerGroup {
+  final String customerId;
+  final String customerName;
+  final String phone;
+
+  final List<WinningTicket> tickets;
+
+  WinnerGroup({
+    required this.customerId,
+    required this.customerName,
+    required this.phone,
+    required this.tickets,
+  });
+
+  double get totalPayout => tickets.fold(0, (s, e) => s + e.payoutAmount);
+
+  double get totalValue => tickets.fold(0, (s, e) => s + e.orderValue);
+
+  int get totalA => tickets.where((e) => e.ticketType == "A").length;
+
+  int get totalB => tickets.where((e) => e.ticketType == "B").length;
+}
+
 class _WinningScreenState extends State<WinningScreen> {
   final winningController = TextEditingController();
 
@@ -35,8 +63,31 @@ class _WinningScreenState extends State<WinningScreen> {
 
   String selectedType = "A";
   List<WinningTicket> winners = [];
+  List<WinnerGroup> buildGroups() {
+    final map = <String, List<WinningTicket>>{};
+
+    for (final t in winners) {
+      map.putIfAbsent(t.customerId, () => []);
+      map[t.customerId]!.add(t);
+    }
+
+    return map.entries.map((e) {
+      final customer = customerRepo.getById(e.key);
+
+      return WinnerGroup(
+        customerId: e.key,
+        customerName: customer?.name ?? "",
+        phone: customer?.phone ?? "",
+        tickets: e.value,
+      );
+    }).toList();
+  }
 
   Future<void> findWinner() async {
+    bool isValidNumber(String value) {
+      return RegExp(r'^\d{2}$').hasMatch(value);
+    }
+
     final input = winningController.text.trim();
 
     if (input.isEmpty) return;
@@ -48,23 +99,29 @@ class _WinningScreenState extends State<WinningScreen> {
     if (selectedType == "A") {
       final existedA = winningRepo
           .getByDate(today)
-          .any((e) => e.ticketType == "A");
+          .where((e) => e.ticketType == "A")
+          .toList();
 
-      if (existedA) {
+      if (existedA.isNotEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Loại A hôm nay đã xác nhận rồi")),
+          const SnackBar(content: Text("Loại A chỉ được xác nhận 1 lần/ngày")),
         );
         return;
       }
-
       final number = input;
+      if (!isValidNumber(number)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Số trúng phải từ 00 đến 99")),
+        );
+        return;
+      }
 
       final matched = orders.where(
         (o) => o.type == "A" && o.productCode == number,
       );
 
       for (final Order order in matched) {
-        final payout = order.amount * config.refundRateA;
+        final payout = order.amount * config.refundRateA * 1000;
 
         await winningRepo.add(
           WinningTicket(
@@ -73,21 +130,41 @@ class _WinningScreenState extends State<WinningScreen> {
             businessDate: today,
             winningNumber: number,
             ticketType: "A",
-            orderValue: order.amount,
+            orderValue: order.amount * 1000,
             payoutAmount: payout,
           ),
         );
       }
     } else {
-      final numbers = input.split(",").map((e) => e.trim()).toList();
+      final numbers = input
+          .split(",")
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toSet()
+          .toList();
 
+      if (numbers.isEmpty) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Phải nhập ít nhất 1 số")));
+        return;
+      }
+
+      for (final n in numbers) {
+        if (!isValidNumber(n)) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text("Số không hợp lệ: $n")));
+          return;
+        }
+      }
       for (final number in numbers) {
         final matched = orders.where(
           (o) => o.type == "B" && o.productCode == number,
         );
 
         for (final Order order in matched) {
-          final payout = order.unit * config.refundRateB * 1000;
+          final payout = order.unit * config.refundRateB;
 
           final orderValue = order.unit * config.ticketPriceB;
 
@@ -121,6 +198,7 @@ class _WinningScreenState extends State<WinningScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final groups = buildGroups();
     return Scaffold(
       appBar: AppBar(title: const Text("Xác nhận vé trúng")),
       body: Column(
@@ -129,48 +207,58 @@ class _WinningScreenState extends State<WinningScreen> {
             padding: const EdgeInsets.all(12),
             child: Row(
               children: [
-                DropdownButtonFormField<String>(
-                  initialValue: selectedType,
-                  items: const [
-                    DropdownMenuItem(value: "A", child: Text("Loại A")),
-                    DropdownMenuItem(value: "B", child: Text("Loại B")),
-                  ],
-                  onChanged: (v) {
-                    setState(() {
-                      selectedType = v!;
-                    });
-                  },
+                Expanded(
+                  flex: 2,
+                  child: DropdownButtonFormField<String>(
+                    value: selectedType,
+                    decoration: const InputDecoration(
+                      labelText: "Loại vé",
+                      border: OutlineInputBorder(),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: "A", child: Text("Loại A")),
+                      DropdownMenuItem(value: "B", child: Text("Loại B")),
+                    ],
+                    onChanged: (v) {
+                      setState(() {
+                        selectedType = v!;
+                      });
+                    },
+                  ),
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(width: 12),
 
-                TextField(
-                  controller: winningController,
-                  decoration: InputDecoration(
-                    labelText: selectedType == "A"
-                        ? "Số trúng (00-99)"
-                        : "Nhiều số (vd: 12,34,56)",
+                Expanded(
+                  flex: 4,
+                  child: TextField(
+                    controller: winningController,
+                    decoration: InputDecoration(
+                      border: const OutlineInputBorder(),
+                      labelText: selectedType == "A"
+                          ? "Số trúng (00-99)"
+                          : "12,34,56",
+                    ),
                   ),
+                ),
+
+                const SizedBox(width: 12),
+
+                ElevatedButton(
+                  onPressed: findWinner,
+                  child: const Text("Xác nhận"),
                 ),
               ],
             ),
           ),
 
           Expanded(
-            child: winners.isEmpty
+            child: groups.isEmpty
                 ? const Center(child: Text("Chưa có vé trúng"))
                 : ListView.builder(
-                    itemCount: winners.length,
+                    itemCount: groups.length,
                     itemBuilder: (_, index) {
-                      final item = winners[index];
-
-                      final customer = customerRepo.getById(item.customerId);
-
-                      return _WinnerCard(
-                        ticket: item,
-                        customerName: customer?.name ?? "",
-                        phone: customer?.phone ?? "",
-                      );
+                      return _WinnerGroupCard(group: groups[index]);
                     },
                   ),
           ),
@@ -180,32 +268,27 @@ class _WinningScreenState extends State<WinningScreen> {
   }
 }
 
-class _WinnerCard extends StatefulWidget {
-  final WinningTicket ticket;
-  final String customerName;
-  final String phone;
+class _WinnerGroupCard extends StatefulWidget {
+  final WinnerGroup group;
 
-  const _WinnerCard({
-    required this.ticket,
-    required this.customerName,
-    required this.phone,
-  });
+  const _WinnerGroupCard({super.key, required this.group});
 
   @override
-  State<_WinnerCard> createState() => _WinnerCardState();
+  State<_WinnerGroupCard> createState() => _WinnerGroupCardState();
 }
 
-class _WinnerCardState extends State<_WinnerCard> {
+class _WinnerGroupCardState extends State<_WinnerGroupCard> {
   final noteController = TextEditingController();
 
   final ImagePicker picker = ImagePicker();
 
-  XFile? selectedImage;
+  Uint8List? imageBytes;
 
   String? selectedFilePath;
   String? selectedFileName;
 
-  Uint8List? imageBytes;
+  bool get isPaid => widget.group.tickets.every((e) => e.paid);
+
   Future<void> takePhoto() async {
     final image = await picker.pickImage(
       source: ImageSource.camera,
@@ -216,9 +299,7 @@ class _WinnerCardState extends State<_WinnerCard> {
 
     imageBytes = await image.readAsBytes();
 
-    setState(() {
-      selectedImage = image;
-    });
+    if (mounted) setState(() {});
   }
 
   Future<void> pickPhoto() async {
@@ -231,13 +312,12 @@ class _WinnerCardState extends State<_WinnerCard> {
 
     imageBytes = await image.readAsBytes();
 
-    setState(() {
-      selectedImage = image;
-    });
+    if (mounted) setState(() {});
   }
 
   Future<void> pickFile() async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.any);
+    final result = await FilePicker.platform.pickFiles();
+
     if (result == null) return;
 
     setState(() {
@@ -247,188 +327,259 @@ class _WinnerCardState extends State<_WinnerCard> {
   }
 
   Future<void> markPaid() async {
-    final hasImage = selectedImage != null;
-    final hasFile = selectedFilePath != null;
-
-    if (!hasImage && !hasFile) {
+    if (imageBytes == null && selectedFilePath == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Phải đính kèm ảnh hoặc file chứng từ")),
       );
       return;
     }
 
-    widget.ticket.paid = true;
+    final now = DateTime.now();
 
-    widget.ticket.paidAt = DateTime.now();
+    for (final ticket in widget.group.tickets) {
+      ticket.paid = true;
+      ticket.paidAt = now;
 
-    widget.ticket.proofImageBytes = imageBytes;
-    widget.ticket.proofFile = selectedFilePath;
+      ticket.proofImageBytes = imageBytes;
+      ticket.proofFile = selectedFilePath;
+      ticket.note = noteController.text.trim();
 
-    widget.ticket.note = noteController.text.trim();
+      await ticket.save();
+    }
 
-    await widget.ticket.save();
-
-    setState(() {});
+    if (mounted) setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
-    final t = widget.ticket;
+    final group = widget.group;
 
     return Card(
-      margin: const EdgeInsets.all(8),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      elevation: 3,
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              widget.customerName,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+            /// HEADER
+            Row(
+              children: [
+                const CircleAvatar(child: Icon(Icons.person)),
+
+                const SizedBox(width: 10),
+
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        group.customerName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                      ),
+
+                      Text(group.phone),
+                    ],
+                  ),
+                ),
+
+                Chip(
+                  backgroundColor: isPaid
+                      ? Colors.green.shade100
+                      : Colors.orange.shade100,
+                  label: Text(isPaid ? "Đã thanh toán" : "Chưa thanh toán"),
+                ),
+              ],
             ),
 
-            Text(widget.phone),
+            const SizedBox(height: 12),
+
+            /// THỐNG KÊ
+            Row(
+              children: [
+                Expanded(child: _statBox("Loại A", "${group.totalA}")),
+
+                const SizedBox(width: 8),
+
+                Expanded(child: _statBox("Loại B", "${group.totalB}")),
+
+                const SizedBox(width: 8),
+
+                Expanded(child: _statBox("Tổng vé", "${group.tickets.length}")),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Column(
+                children: [
+                  const Text(
+                    "TỔNG TIỀN PHẢI TRẢ",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    "${money(group.totalPayout)} đ",
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.red,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            const Text(
+              "Danh sách mã trúng",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
 
             const SizedBox(height: 8),
 
-            Text("Ticket: ${t.ticketId}"),
-
-            Text("Số trúng: ${t.winningNumber}"),
-            const SizedBox(height: 6),
-
-            Text("Loại vé: ${t.ticketType}"),
-
-            Text(
-              "Giá trị vé: "
-              "${t.orderValue.toStringAsFixed(0)}",
-            ),
-
-            Text(
-              "Tiền phải trả: "
-              "${t.payoutAmount.toStringAsFixed(0)} đ",
-              style: const TextStyle(
-                color: Colors.red,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            Text("Ngày trúng: ${t.businessDate}"),
-
-            const SizedBox(height: 10),
-
-            if (t.paid)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    "✅ Đã thanh toán",
-                    style: TextStyle(
-                      color: Colors.green,
+            ...group.tickets.map(
+              (t) => Card(
+                color: Colors.grey.shade50,
+                margin: const EdgeInsets.only(bottom: 6),
+                child: ListTile(
+                  dense: true,
+                  title: Text("Mã ${t.winningNumber}"),
+                  subtitle: Text(
+                    "Loại ${t.ticketType} • "
+                    "Giá trị ${money(t.orderValue)} đ",
+                  ),
+                  trailing: Text(
+                    "${money(t.payoutAmount)} đ",
+                    style: const TextStyle(
+                      color: Colors.red,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+                ),
+              ),
+            ),
 
-                  const SizedBox(height: 4),
+            if (!isPaid) ...[
+              const Divider(height: 24),
 
-                  Text("Thời gian: ${t.paidAt}"),
-
-                  if (t.proofImageBytes != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: SizedBox(
-                          height: 180,
-                          width: double.infinity,
-                          child: Image.memory(
-                            t.proofImageBytes!,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                    ),
-                  if (t.proofFile != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: Text("📎 ${t.proofFile}"),
-                    ),
-
-                  if ((t.note ?? "").isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: Text(t.note!),
-                    ),
-                ],
-              )
-            else
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
                 children: [
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      OutlinedButton.icon(
-                        onPressed: takePhoto,
-                        icon: const Icon(Icons.camera_alt),
-                        label: const Text("Chụp ảnh"),
-                      ),
-
-                      OutlinedButton.icon(
-                        onPressed: pickPhoto,
-                        icon: const Icon(Icons.photo),
-                        label: const Text("Chọn ảnh"),
-                      ),
-
-                      OutlinedButton.icon(
-                        onPressed: pickFile,
-                        icon: const Icon(Icons.attach_file),
-                        label: const Text("Đính kèm file"),
-                      ),
-                    ],
+                  OutlinedButton.icon(
+                    onPressed: takePhoto,
+                    icon: const Icon(Icons.camera_alt),
+                    label: const Text("Chụp ảnh"),
                   ),
 
-                  if (imageBytes != null)
-                    SizedBox(
-                      height: 180,
-                      width: double.infinity,
-                      child: Image.memory(imageBytes!, fit: BoxFit.cover),
-                    ),
-
-                  if (selectedFileName != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: Text(
-                        "📎 $selectedFileName",
-                        style: const TextStyle(fontWeight: FontWeight.w500),
-                      ),
-                    ),
-
-                  const SizedBox(height: 12),
-
-                  TextField(
-                    controller: noteController,
-                    maxLines: 2,
-                    decoration: const InputDecoration(
-                      labelText: "Ghi chú (tuỳ chọn)",
-                      border: OutlineInputBorder(),
-                    ),
+                  OutlinedButton.icon(
+                    onPressed: pickPhoto,
+                    icon: const Icon(Icons.photo),
+                    label: const Text("Chọn ảnh"),
                   ),
 
-                  const SizedBox(height: 10),
-
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: markPaid,
-                      icon: const Icon(Icons.check),
-                      label: const Text("XÁC NHẬN THANH TOÁN"),
-                    ),
+                  OutlinedButton.icon(
+                    onPressed: pickFile,
+                    icon: const Icon(Icons.attach_file),
+                    label: const Text("File"),
                   ),
                 ],
               ),
+
+              if (imageBytes != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.memory(
+                      imageBytes!,
+                      height: 180,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+
+              if (selectedFileName != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text("📎 $selectedFileName"),
+                ),
+
+              const SizedBox(height: 12),
+
+              TextField(
+                controller: noteController,
+                maxLines: 2,
+                decoration: const InputDecoration(
+                  labelText: "Ghi chú",
+                  border: OutlineInputBorder(),
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: markPaid,
+                  icon: const Icon(Icons.check),
+                  label: Text("THANH TOÁN ${money(group.totalPayout)} đ"),
+                ),
+              ),
+            ] else ...[
+              const SizedBox(height: 12),
+
+              if (group.tickets.first.proofImageBytes != null)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.memory(
+                    group.tickets.first.proofImageBytes!,
+                    height: 180,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+
+              if (group.tickets.first.proofFile != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text("📎 ${group.tickets.first.proofFile}"),
+                ),
+            ],
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _statBox(String title, String value) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        children: [
+          Text(title),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+        ],
       ),
     );
   }

@@ -75,7 +75,6 @@ class _OrderScreenState extends State<OrderScreen> {
     buffer.writeln("");
 
     buffer.writeln("LOẠI A");
-    buffer.writeln("");
 
     double totalA = 0;
 
@@ -85,12 +84,16 @@ class _OrderScreenState extends State<OrderScreen> {
       buffer.writeln("${e.key} : ${_formatNumber(e.value)}");
     }
 
-    buffer.writeln("");
+    final commissionA = totalA * config.commissionRateA;
+
     buffer.writeln("Tổng A: ${_formatNumber(totalA)}");
+    buffer.writeln(
+      "Hoa hồng A (${(config.commissionRateA * 100).toStringAsFixed(0)}%): "
+      "${_formatNumber(commissionA)}",
+    );
 
     buffer.writeln("");
     buffer.writeln("LOẠI B");
-    buffer.writeln("");
 
     int totalPointB = 0;
     double totalMoneyB = 0;
@@ -105,13 +108,31 @@ class _OrderScreenState extends State<OrderScreen> {
       buffer.writeln("${e.key} : ${e.value} điểm (${_formatNumber(money)})");
     }
 
-    buffer.writeln("");
-    buffer.writeln("Tổng B: $totalPointB điểm (${_formatNumber(totalMoneyB)})");
+    final commissionB = totalPointB * config.commissionPerPointB;
+
+    buffer.writeln(
+      "Tổng B: $totalPointB điểm "
+      "(${_formatNumber(totalMoneyB)})",
+    );
+
+    buffer.writeln(
+      "Hoa hồng B "
+      "(${_formatNumber(config.commissionPerPointB)}/điểm): "
+      "${_formatNumber(commissionB)}",
+    );
+
+    final totalRevenue = totalA + totalMoneyB;
+
+    final totalCommission = commissionA + commissionB;
+
+    final netTransfer = totalRevenue - totalCommission;
 
     buffer.writeln("");
-    buffer.writeln("══════════════");
+    buffer.writeln("TỔNG DOANH THU: ${_formatNumber(totalRevenue)}");
 
-    buffer.writeln("TỔNG DOANH THU: ${_formatNumber(totalA + totalMoneyB)}");
+    buffer.writeln("TỔNG HOA HỒNG: ${_formatNumber(totalCommission)}");
+
+    buffer.writeln("THỰC CHUYỂN: ${_formatNumber(netTransfer)}");
 
     return buffer.toString();
   }
