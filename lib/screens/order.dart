@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_2/screens/winning_screen.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:flutter/services.dart';
 import '../hive/hive_boxes.dart';
@@ -14,6 +15,7 @@ import '../repositories/customer_repository.dart';
 import '../models/customer.dart';
 import '../models/configuration.dart';
 import '../services/config_service.dart';
+import 'customer_list_screen.dart';
 
 class OrderScreen extends StatefulWidget {
   const OrderScreen({super.key});
@@ -281,17 +283,40 @@ class _OrderScreenState extends State<OrderScreen> {
                         itemBuilder: (_) => const [
                           PopupMenuItem(
                             value: "report",
-                            child: Text("📊 Báo cáo tài chính"),
+                            child: Text("Báo cáo tài chính"),
                           ),
                           PopupMenuItem(
                             value: "settlement",
-                            child: Text("💰 Tính bồi hoàn"),
+                            child: Text("Tính bồi hoàn"),
                           ),
                         ],
                       ),
 
                       const SizedBox(width: 4),
-
+                      _AppBarIconButton(
+                        tooltip: "Khách hàng",
+                        icon: Icons.people_alt_outlined,
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const CustomerListScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      _AppBarIconButton(
+                        tooltip: "Vé trúng",
+                        icon: Icons.emoji_events_outlined,
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const WinningScreen(),
+                            ),
+                          );
+                        },
+                      ),
                       _AppBarIconButton(
                         tooltip: "Cài đặt",
                         icon: Icons.settings_outlined,

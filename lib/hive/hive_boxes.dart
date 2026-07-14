@@ -6,4 +6,5 @@ class HiveBoxes {
   static const String eventBox = "events";
   static const customerBox = "customers";
   static const ticketBox = "tickets";
+  static const winningBox = "winning_box";
 }

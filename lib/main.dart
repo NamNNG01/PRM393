@@ -7,7 +7,7 @@ import 'models/event.dart';
 import 'models/customer.dart';
 import 'models/ticket.dart';
 import 'screens/home.dart';
-
+import 'models/winning_ticket.dart';
 import 'hive/hive_boxes.dart';
 import 'hive/config_box.dart';
 
@@ -28,6 +28,9 @@ void main() async {
   await Hive.openBox(ConfigBox.boxName);
   await Hive.openBox<Customer>(HiveBoxes.customerBox);
   final configBox = Hive.box<Configuration>(HiveBoxes.configBox);
+  Hive.registerAdapter(WinningTicketAdapter());
+
+  await Hive.openBox<WinningTicket>(HiveBoxes.winningBox);
 
   if (configBox.isEmpty) {
     configBox.add(
