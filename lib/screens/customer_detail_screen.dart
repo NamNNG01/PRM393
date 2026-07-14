@@ -24,6 +24,44 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
 
   String selectedDate = "ALL";
 
+  String _getDateDisplayString() {
+    if (selectedDate == "ALL") {
+      return "Tất cả";
+    }
+    final parts = selectedDate.split("-");
+    if (parts.length == 3) {
+      return "${parts[2]}-${parts[1]}-${parts[0]}";
+    }
+    return selectedDate;
+  }
+
+  Future<void> _selectDate(BuildContext context) async {
+    final now = DateTime.now();
+    DateTime initial = now;
+    if (selectedDate != "ALL") {
+      final parsed = DateTime.tryParse(selectedDate);
+      if (parsed != null) {
+        initial = parsed;
+      }
+    }
+
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2101),
+    );
+
+    if (picked != null) {
+      final formatted = "${picked.year}-"
+          "${picked.month.toString().padLeft(2, '0')}-"
+          "${picked.day.toString().padLeft(2, '0')}";
+      setState(() {
+        selectedDate = formatted;
+      });
+    }
+  }
+
   String _formatDate(DateTime date) {
     return "${date.day.toString().padLeft(2, '0')}-"
         "${date.month.toString().padLeft(2, '0')}-"
@@ -81,7 +119,6 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final orders = _orders();
-    final dates = orders.map((e) => e.businessDate).toSet().toList();
 
     final filtered = orders.where((o) {
       final keyword = searchController.text.trim().toLowerCase();
@@ -299,48 +336,63 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   flex: 2,
-                  child: DropdownButtonFormField<String>(
-                    isExpanded: true,
-                    initialValue: selectedDate,
-                    decoration: InputDecoration(
-                      labelText: "Lọc theo ngày",
-                      labelStyle: TextStyle(
-                        fontSize: 11,
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                      filled: true,
-                      fillColor: colorScheme.surface,
-                      contentPadding: const EdgeInsets.symmetric(
-                        vertical: 8,
-                        horizontal: 6,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: colorScheme.outlineVariant,
+                  child: InkWell(
+                    onTap: () => _selectDate(context),
+                    borderRadius: BorderRadius.circular(12),
+                    child: InputDecorator(
+                      decoration: InputDecoration(
+                        labelText: "Lọc theo ngày",
+                        labelStyle: TextStyle(
+                          fontSize: 11,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                        filled: true,
+                        fillColor: colorScheme.surface,
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 8,
+                          horizontal: 8,
+                        ),
+                        prefixIcon: Icon(
+                          Icons.calendar_today_outlined,
+                          size: 16,
+                          color: colorScheme.primary,
+                        ),
+                        suffixIcon: selectedDate != "ALL"
+                            ? InkWell(
+                                onTap: () {
+                                  setState(() {
+                                    selectedDate = "ALL";
+                                  });
+                                },
+                                child: Icon(
+                                  Icons.cancel_outlined,
+                                  size: 16,
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                              )
+                            : null,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: colorScheme.outlineVariant,
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: colorScheme.outlineVariant,
+                          ),
                         ),
                       ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: colorScheme.outlineVariant,
+                      child: Text(
+                        _getDateDisplayString(),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: colorScheme.onSurface,
                         ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    items: [
-                      const DropdownMenuItem(
-                        value: "ALL",
-                        child: Text("Tất cả"),
-                      ),
-                      ...dates.map(
-                        (e) => DropdownMenuItem(value: e, child: Text(e)),
-                      ),
-                    ],
-                    onChanged: (v) {
-                      setState(() {
-                        selectedDate = v ?? "ALL";
-                      });
-                    },
                   ),
                 ),
               ],
