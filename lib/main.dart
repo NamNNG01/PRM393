@@ -6,7 +6,7 @@ import 'models/configuration.dart';
 import 'models/event.dart';
 import 'models/customer.dart';
 import 'models/ticket.dart';
-import 'screens/home.dart';
+import 'screens/order.dart';
 import 'models/winning_ticket.dart';
 import 'hive/hive_boxes.dart';
 import 'hive/config_box.dart';
@@ -57,14 +57,14 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Quản Lý Đại Lý Vé Số',
+      title: 'Agent Manager',
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
         scaffoldBackgroundColor: Colors.grey[50],
         appBarTheme: const AppBarTheme(centerTitle: true, elevation: 0),
       ),
-      home: const HomeScreen(),
+      home: const OrderScreen(),
     );
   }
 }
