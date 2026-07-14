@@ -1246,6 +1246,163 @@ class _DetailTabState extends State<_DetailTab> {
         "${_two(dt.hour)}:${_two(dt.minute)}";
   }
 
+  /// Sửa số tiền/điểm của 1 mã đã nhập — không cho xóa, chỉ cho sửa,
+  /// và bắt buộc phải xác nhận nghiêm túc trước khi lưu vì ảnh hưởng tiền của khách.
+  Future<void> _editOrder(BuildContext context, Order order) async {
+    final isTypeA = order.type == "A";
+
+    final controller = TextEditingController(
+      text: isTypeA ? order.amount.toStringAsFixed(0) : order.unit.toString(),
+    );
+
+    final newValue = await showDialog<double>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text("Sửa mã ${order.productCode}"),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: InputDecoration(
+            labelText: isTypeA ? "Số tiền (nghìn đồng)" : "Số điểm",
+            border: const OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Hủy"),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final v = double.tryParse(controller.text.trim());
+              if (v == null || v <= 0) {
+                ScaffoldMessenger.of(ctx).showSnackBar(
+                  const SnackBar(content: Text("Giá trị không hợp lệ")),
+                );
+                return;
+              }
+              Navigator.pop(ctx, v);
+            },
+            child: const Text("Tiếp tục"),
+          ),
+        ],
+      ),
+    );
+
+    if (newValue == null) return;
+    if (!context.mounted) return;
+
+    final oldDisplay = isTypeA
+        ? widget.formatNumber(order.amount)
+        : "${order.unit} điểm";
+    final newDisplay = isTypeA
+        ? widget.formatNumber(newValue)
+        : "${newValue.toInt()} điểm";
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.orange[800]),
+            const SizedBox(width: 8),
+            const Expanded(
+              child: Text(
+                "Xác nhận thay đổi",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text("Mã ${order.productCode} sẽ được sửa như sau:"),
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Flexible(
+                    child: Text(
+                      oldDisplay,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        decoration: TextDecoration.lineThrough,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8),
+                    child: Icon(Icons.arrow_forward_rounded, size: 18),
+                  ),
+                  Flexible(
+                    child: Text(
+                      newDisplay,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              "Thao tác này sẽ thay đổi số tiền đã ghi nhận của khách hàng và "
+              "không thể hoàn tác. Vui lòng kiểm tra kỹ trước khi xác nhận.",
+              style: TextStyle(
+                color: Colors.red[700],
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text("Hủy"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange[800],
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text("Xác nhận sửa"),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    if (isTypeA) {
+      order.amount = newValue;
+    } else {
+      order.unit = newValue.toInt();
+    }
+    await order.save();
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Đã cập nhật mã ${order.productCode}")),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -1487,7 +1644,7 @@ class _DetailTabState extends State<_DetailTab> {
                             const SizedBox(width: 8),
                             Flexible(
                               child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
+                                mainAxisSize: MainAxisSize.min,
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
                                   Text(
@@ -1510,6 +1667,42 @@ class _DetailTabState extends State<_DetailTab> {
                                         color: Colors.grey[600],
                                       ),
                                     ),
+                                  const SizedBox(height: 8),
+                                  Material(
+                                    color: colorScheme.primary.withValues(
+                                      alpha: 0.1,
+                                    ),
+                                    borderRadius: BorderRadius.circular(20),
+                                    child: InkWell(
+                                      borderRadius: BorderRadius.circular(20),
+                                      onTap: () => _editOrder(context, order),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 6,
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.edit_rounded,
+                                              size: 14,
+                                              color: colorScheme.primary,
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              "Sửa",
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600,
+                                                color: colorScheme.primary,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
