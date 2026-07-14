@@ -1823,6 +1823,7 @@ class _StatCard extends StatelessWidget {
     required this.color,
   });
 
+
   @override
   Widget build(BuildContext context) {
     return Container(
