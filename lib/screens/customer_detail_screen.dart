@@ -42,7 +42,12 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
     return orders;
   }
 
-  Widget _buildStatItem(BuildContext context, {required IconData icon, required String label, required String value}) {
+  Widget _buildStatItem(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
     final colorScheme = Theme.of(context).colorScheme;
     return Column(
       children: [
@@ -55,7 +60,11 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
         const SizedBox(height: 4),
         Text(
           value,
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: colorScheme.onSurface),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 15,
+            color: colorScheme.onSurface,
+          ),
         ),
       ],
     );
@@ -80,8 +89,12 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
       return matchCode && matchDate;
     }).toList();
 
-    final totalAmountA = orders.where((e) => e.type == "A").fold<double>(0.0, (sum, item) => sum + item.amount * 1000);
-    final totalPointsB = orders.where((e) => e.type == "B").fold<int>(0, (sum, item) => sum + item.unit);
+    final totalAmountA = orders
+        .where((e) => e.type == "A")
+        .fold<double>(0.0, (sum, item) => sum + item.amount * 1000);
+    final totalPointsB = orders
+        .where((e) => e.type == "B")
+        .fold<int>(0, (sum, item) => sum + item.unit);
 
     return Scaffold(
       backgroundColor: colorScheme.surfaceContainerLowest,
@@ -156,7 +169,11 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                       CircleAvatar(
                         radius: 26,
                         backgroundColor: colorScheme.primaryContainer,
-                        child: Icon(Icons.person, size: 26, color: colorScheme.onPrimaryContainer),
+                        child: Icon(
+                          Icons.person,
+                          size: 26,
+                          color: colorScheme.onPrimaryContainer,
+                        ),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
@@ -174,7 +191,11 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                             const SizedBox(height: 4),
                             Row(
                               children: [
-                                Icon(Icons.phone_outlined, size: 16, color: colorScheme.primary),
+                                Icon(
+                                  Icons.phone_outlined,
+                                  size: 16,
+                                  color: colorScheme.primary,
+                                ),
                                 const SizedBox(width: 6),
                                 Text(
                                   widget.customer.phone,
@@ -197,7 +218,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                       _buildStatItem(
                         context,
                         icon: Icons.confirmation_number_outlined,
-                        label: "Tổng số vé",
+                        label: "Tổng số Mã",
                         value: "${orders.length}",
                       ),
                       _buildStatItem(
@@ -230,22 +251,35 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                     controller: searchController,
                     onChanged: (_) => setState(() {}),
                     decoration: InputDecoration(
-                      prefixIcon: Icon(Icons.search, color: colorScheme.primary),
+                      prefixIcon: Icon(
+                        Icons.search,
+                        color: colorScheme.primary,
+                      ),
                       hintText: "Tìm mã số...",
                       filled: true,
                       fillColor: colorScheme.surface,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                      contentPadding: const EdgeInsets.symmetric(
+                        vertical: 10,
+                        horizontal: 12,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: colorScheme.outlineVariant),
+                        borderSide: BorderSide(
+                          color: colorScheme.outlineVariant,
+                        ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: colorScheme.outlineVariant),
+                        borderSide: BorderSide(
+                          color: colorScheme.outlineVariant,
+                        ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
+                        borderSide: BorderSide(
+                          color: colorScheme.primary,
+                          width: 1.5,
+                        ),
                       ),
                     ),
                   ),
@@ -257,22 +291,37 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                     initialValue: selectedDate,
                     decoration: InputDecoration(
                       labelText: "Lọc theo ngày",
-                      labelStyle: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+                      labelStyle: TextStyle(
+                        fontSize: 12,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
                       filled: true,
                       fillColor: colorScheme.surface,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                      contentPadding: const EdgeInsets.symmetric(
+                        vertical: 8,
+                        horizontal: 10,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: colorScheme.outlineVariant),
+                        borderSide: BorderSide(
+                          color: colorScheme.outlineVariant,
+                        ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: colorScheme.outlineVariant),
+                        borderSide: BorderSide(
+                          color: colorScheme.outlineVariant,
+                        ),
                       ),
                     ),
                     items: [
-                      const DropdownMenuItem(value: "ALL", child: Text("Tất cả")),
-                      ...dates.map((e) => DropdownMenuItem(value: e, child: Text(e))),
+                      const DropdownMenuItem(
+                        value: "ALL",
+                        child: Text("Tất cả"),
+                      ),
+                      ...dates.map(
+                        (e) => DropdownMenuItem(value: e, child: Text(e)),
+                      ),
                     ],
                     onChanged: (v) {
                       setState(() {
@@ -293,11 +342,18 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.history_toggle_off_rounded, size: 64, color: colorScheme.outline),
+                        Icon(
+                          Icons.history_toggle_off_rounded,
+                          size: 64,
+                          color: colorScheme.outline,
+                        ),
                         const SizedBox(height: 12),
                         Text(
                           "Không có dữ liệu giao dịch",
-                          style: TextStyle(color: colorScheme.outline, fontSize: 16),
+                          style: TextStyle(
+                            color: colorScheme.outline,
+                            fontSize: 16,
+                          ),
                         ),
                       ],
                     ),
@@ -317,7 +373,10 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                         ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
-                          side: BorderSide(color: colorScheme.outlineVariant, width: 1),
+                          side: BorderSide(
+                            color: colorScheme.outlineVariant,
+                            width: 1,
+                          ),
                         ),
                         color: colorScheme.surface,
                         child: Padding(
@@ -361,11 +420,15 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                               ),
                               const Divider(height: 20),
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
                                     "Ngày: ${order.businessDate}",
-                                    style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 13),
+                                    style: TextStyle(
+                                      color: colorScheme.onSurfaceVariant,
+                                      fontSize: 13,
+                                    ),
                                   ),
                                   Text(
                                     order.type == "A"
@@ -386,15 +449,20 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                                   decoration: BoxDecoration(
                                     color: Colors.green.withValues(alpha: 0.08),
                                     borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: Colors.green.withValues(alpha: 0.2)),
+                                    border: Border.all(
+                                      color: Colors.green.withValues(
+                                        alpha: 0.2,
+                                      ),
+                                    ),
                                   ),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Row(
                                         children: [
                                           const Text(
-                                            "🎉 Vé trúng thưởng",
+                                            "🎉 Mã sinh lời",
                                             style: TextStyle(
                                               color: Colors.green,
                                               fontWeight: FontWeight.bold,
@@ -403,9 +471,13 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                                           ),
                                           const Spacer(),
                                           Text(
-                                            winning.paid ? "Đã thanh toán" : "Chưa thanh toán",
+                                            winning.paid
+                                                ? "Đã thanh toán"
+                                                : "Chưa thanh toán",
                                             style: TextStyle(
-                                              color: winning.paid ? Colors.green : Colors.orange,
+                                              color: winning.paid
+                                                  ? Colors.green
+                                                  : Colors.orange,
                                               fontWeight: FontWeight.bold,
                                               fontSize: 12,
                                             ),
@@ -414,7 +486,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                                       ),
                                       const SizedBox(height: 6),
                                       Text(
-                                        "Tiền trúng: ${formatCurrency(winning.payoutAmount)}",
+                                        "Tiền sinh lời: ${formatCurrency(winning.payoutAmount)}",
                                         style: const TextStyle(
                                           color: Colors.redAccent,
                                           fontWeight: FontWeight.bold,
@@ -423,25 +495,42 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                                       ),
                                       if (winning.paidAt != null)
                                         Padding(
-                                          padding: const EdgeInsets.only(top: 4),
+                                          padding: const EdgeInsets.only(
+                                            top: 4,
+                                          ),
                                           child: Text(
                                             "Cập nhật lúc: ${_formatDate(winning.paidAt!)}",
-                                            style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 12),
+                                            style: TextStyle(
+                                              color:
+                                                  colorScheme.onSurfaceVariant,
+                                              fontSize: 12,
+                                            ),
                                           ),
                                         ),
-                                      if (winning.note != null && winning.note!.isNotEmpty)
+                                      if (winning.note != null &&
+                                          winning.note!.isNotEmpty)
                                         Padding(
-                                          padding: const EdgeInsets.only(top: 4),
+                                          padding: const EdgeInsets.only(
+                                            top: 4,
+                                          ),
                                           child: Text(
                                             "Ghi chú: ${winning.note}",
-                                            style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 12),
+                                            style: TextStyle(
+                                              color:
+                                                  colorScheme.onSurfaceVariant,
+                                              fontSize: 12,
+                                            ),
                                           ),
                                         ),
                                       if (winning.proofImageBytes != null)
                                         Padding(
-                                          padding: const EdgeInsets.only(top: 8),
+                                          padding: const EdgeInsets.only(
+                                            top: 8,
+                                          ),
                                           child: ClipRRect(
-                                            borderRadius: BorderRadius.circular(12),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
                                             child: Image.memory(
                                               winning.proofImageBytes!,
                                               height: 180,
@@ -450,10 +539,15 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                                             ),
                                           ),
                                         )
-                                      else if ((winning.proofFile ?? "").isNotEmpty)
+                                      else if ((winning.proofFile ?? "")
+                                          .isNotEmpty)
                                         Padding(
-                                          padding: const EdgeInsets.only(top: 8),
-                                          child: ProofImageView(path: winning.proofFile!),
+                                          padding: const EdgeInsets.only(
+                                            top: 8,
+                                          ),
+                                          child: ProofImageView(
+                                            path: winning.proofFile!,
+                                          ),
                                         ),
                                     ],
                                   ),
@@ -462,11 +556,18 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                                 const Divider(height: 20),
                                 Row(
                                   children: [
-                                    Icon(Icons.cancel_outlined, size: 16, color: colorScheme.error),
+                                    Icon(
+                                      Icons.cancel_outlined,
+                                      size: 16,
+                                      color: colorScheme.error,
+                                    ),
                                     const SizedBox(width: 4),
                                     Text(
-                                      "Chưa trúng thưởng",
-                                      style: TextStyle(color: colorScheme.error, fontSize: 12),
+                                      "Chưa sinh lời",
+                                      style: TextStyle(
+                                        color: colorScheme.error,
+                                        fontSize: 12,
+                                      ),
                                     ),
                                   ],
                                 ),

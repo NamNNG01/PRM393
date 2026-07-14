@@ -86,7 +86,10 @@ class _SettlementScreenState extends State<SettlementScreen> {
                     Positioned(
                       left: 4,
                       child: IconButton(
-                        icon: Icon(Icons.arrow_back, color: colorScheme.onPrimary),
+                        icon: Icon(
+                          Icons.arrow_back,
+                          color: colorScheme.onPrimary,
+                        ),
                         onPressed: () => Navigator.pop(context),
                       ),
                     ),
@@ -105,7 +108,9 @@ class _SettlementScreenState extends State<SettlementScreen> {
               elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                side: BorderSide(
+                  color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                ),
               ),
               color: colorScheme.surface,
               child: Padding(
@@ -141,11 +146,17 @@ class _SettlementScreenState extends State<SettlementScreen> {
                     DropdownButtonFormField<String>(
                       value: type,
                       decoration: InputDecoration(
-                        labelText: "Loại vé",
-                        prefixIcon: Icon(Icons.confirmation_number_outlined, color: colorScheme.primary),
+                        labelText: "Loại Mã",
+                        prefixIcon: Icon(
+                          Icons.confirmation_number_outlined,
+                          color: colorScheme.primary,
+                        ),
                         filled: true,
                         fillColor: Colors.grey[50],
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide(color: Colors.grey[300]!),
@@ -156,12 +167,15 @@ class _SettlementScreenState extends State<SettlementScreen> {
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
+                          borderSide: BorderSide(
+                            color: colorScheme.primary,
+                            width: 1.5,
+                          ),
                         ),
                       ),
                       items: const [
-                        DropdownMenuItem(value: "A", child: Text("Vé Loại A")),
-                        DropdownMenuItem(value: "B", child: Text("Vé Loại B")),
+                        DropdownMenuItem(value: "A", child: Text("Mã Loại A")),
+                        DropdownMenuItem(value: "B", child: Text("Mã Loại B")),
                       ],
                       onChanged: (v) {
                         setState(() {
@@ -177,16 +191,25 @@ class _SettlementScreenState extends State<SettlementScreen> {
                         decoration: BoxDecoration(
                           color: Colors.orange.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                          border: Border.all(
+                            color: Colors.orange.withValues(alpha: 0.3),
+                          ),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.warning_amber_rounded, color: Colors.orange),
+                            const Icon(
+                              Icons.warning_amber_rounded,
+                              color: Colors.orange,
+                            ),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
-                                "Không tìm thấy mã sản phẩm nào cho Loại vé $type. Vui lòng thêm đơn hàng trước.",
-                                style: const TextStyle(color: Colors.orange, fontSize: 13, height: 1.4),
+                                "Không tìm thấy mã sản phẩm nào cho Loại Mã $type. Vui lòng thêm mã trước.",
+                                style: const TextStyle(
+                                  color: Colors.orange,
+                                  fontSize: 13,
+                                  height: 1.4,
+                                ),
                               ),
                             ),
                           ],
@@ -197,10 +220,16 @@ class _SettlementScreenState extends State<SettlementScreen> {
                         value: selectedCode,
                         decoration: InputDecoration(
                           labelText: "Mã sản phẩm",
-                          prefixIcon: Icon(Icons.qr_code_scanner_rounded, color: colorScheme.primary),
+                          prefixIcon: Icon(
+                            Icons.qr_code_scanner_rounded,
+                            color: colorScheme.primary,
+                          ),
                           filled: true,
                           fillColor: Colors.grey[50],
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(color: Colors.grey[300]!),
@@ -211,11 +240,16 @@ class _SettlementScreenState extends State<SettlementScreen> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
+                            borderSide: BorderSide(
+                              color: colorScheme.primary,
+                              width: 1.5,
+                            ),
                           ),
                         ),
                         items: codes
-                            .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                            .map(
+                              (e) => DropdownMenuItem(value: e, child: Text(e)),
+                            )
                             .toList(),
                         onChanged: (v) {
                           setState(() {
@@ -231,10 +265,16 @@ class _SettlementScreenState extends State<SettlementScreen> {
                         keyboardType: TextInputType.number,
                         decoration: InputDecoration(
                           labelText: "Hệ số",
-                          prefixIcon: const Icon(Icons.star_border_outlined, color: Colors.teal),
+                          prefixIcon: const Icon(
+                            Icons.star_border_outlined,
+                            color: Colors.teal,
+                          ),
                           filled: true,
                           fillColor: Colors.grey[50],
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(color: Colors.grey[300]!),
@@ -245,7 +285,10 @@ class _SettlementScreenState extends State<SettlementScreen> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Colors.teal, width: 1.5),
+                            borderSide: const BorderSide(
+                              color: Colors.teal,
+                              width: 1.5,
+                            ),
                           ),
                         ),
                       ),
@@ -301,7 +344,8 @@ class _SettlementScreenState extends State<SettlementScreen> {
                             report: widget.resultB,
                             productCode: selectedCode!,
                             refundRate: config.refundRateB,
-                            multiplier: int.tryParse(multiplierController.text) ?? 1,
+                            multiplier:
+                                int.tryParse(multiplierController.text) ?? 1,
                             ticketPrice: config.ticketPriceB,
                           );
                         }
@@ -309,7 +353,8 @@ class _SettlementScreenState extends State<SettlementScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => SettlementReportScreen(result: result),
+                            builder: (_) =>
+                                SettlementReportScreen(result: result),
                           ),
                         );
                       }

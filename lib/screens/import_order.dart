@@ -17,6 +17,8 @@ class ImportOrderScreen extends StatefulWidget {
 class _ImportOrderScreenState extends State<ImportOrderScreen> {
   String selectedType = "A";
   bool showExample = false;
+  // Đơn vị tiền: 1.0 = nghìn đồng, 0.001 = đồng
+  double _amountUnit = 1.0;
 
   final TextEditingController inputController = TextEditingController();
   final TextEditingController customerController = TextEditingController();
@@ -57,7 +59,7 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
       if (line.isEmpty) continue;
 
       final lineNumber = i + 1;
-      
+
       final clean = line
           .replaceAll(',', ' ')
           .replaceAll(':', ' ')
@@ -88,6 +90,12 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
       if (value == null || value <= 0) {
         throw FormatException(
           "Dòng $lineNumber: Số tiền '$valueStr' không hợp lệ. Phải là số dương.",
+        );
+      }
+
+      if (selectedType == "A" && _amountUnit == 0.001 && value < 1000) {
+        throw FormatException(
+          "Dòng $lineNumber: Số tiền '$valueStr' không hợp lệ. Khi chọn đơn vị Đồng, số tiền tối thiểu phải là 1.000đ.",
         );
       }
 
@@ -130,7 +138,7 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                   alignment: Alignment.center,
                   children: [
                     Text(
-                      "Nhập Đơn Hàng",
+                      "Nhập mã",
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 20,
@@ -175,7 +183,11 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.person_pin_rounded, color: colorScheme.primary, size: 24),
+                        Icon(
+                          Icons.person_pin_rounded,
+                          color: colorScheme.primary,
+                          size: 24,
+                        ),
                         const SizedBox(width: 8),
                         Text(
                           "Thông tin khách hàng",
@@ -192,17 +204,25 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                       DropdownButtonFormField<Customer>(
                         initialValue: selectedCustomer,
                         decoration: InputDecoration(
-                          prefixIcon: Icon(Icons.assignment_ind_outlined, color: colorScheme.primary),
+                          prefixIcon: Icon(
+                            Icons.assignment_ind_outlined,
+                            color: colorScheme.primary,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: colorScheme.outlineVariant),
+                            borderSide: BorderSide(
+                              color: colorScheme.outlineVariant,
+                            ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                            borderSide: BorderSide(
+                              color: colorScheme.primary,
+                              width: 2,
+                            ),
                           ),
                           labelText: "Chọn khách hàng có sẵn",
                           filled: true,
@@ -225,17 +245,25 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                       TextField(
                         controller: customerNameController,
                         decoration: InputDecoration(
-                          prefixIcon: Icon(Icons.person_outline, color: colorScheme.primary),
+                          prefixIcon: Icon(
+                            Icons.person_outline,
+                            color: colorScheme.primary,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: colorScheme.outlineVariant),
+                            borderSide: BorderSide(
+                              color: colorScheme.outlineVariant,
+                            ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                            borderSide: BorderSide(
+                              color: colorScheme.primary,
+                              width: 2,
+                            ),
                           ),
                           labelText: "Tên khách hàng mới",
                           filled: true,
@@ -247,17 +275,25 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                         controller: phoneController,
                         keyboardType: TextInputType.phone,
                         decoration: InputDecoration(
-                          prefixIcon: Icon(Icons.phone_outlined, color: colorScheme.primary),
+                          prefixIcon: Icon(
+                            Icons.phone_outlined,
+                            color: colorScheme.primary,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: colorScheme.outlineVariant),
+                            borderSide: BorderSide(
+                              color: colorScheme.outlineVariant,
+                            ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                            borderSide: BorderSide(
+                              color: colorScheme.primary,
+                              width: 2,
+                            ),
                           ),
                           labelText: "Số điện thoại",
                           filled: true,
@@ -269,7 +305,10 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                     Align(
                       alignment: Alignment.centerRight,
                       child: TextButton.icon(
-                        icon: Icon(showAddCustomer ? Icons.close : Icons.person_add, size: 18),
+                        icon: Icon(
+                          showAddCustomer ? Icons.close : Icons.person_add,
+                          size: 18,
+                        ),
                         label: Text(
                           showAddCustomer ? "Hủy tạo khách" : "Thêm khách mới",
                           style: const TextStyle(fontWeight: FontWeight.bold),
@@ -295,7 +334,7 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
             ),
             const SizedBox(height: 16),
 
-            // CARD 2: CÀI ĐẶT & NỘI DUNG ĐƠN HÀNG
+            // CARD 2: CÀI ĐẶT & NỘI DUNG mã
             Card(
               elevation: 0,
               shape: RoundedRectangleBorder(
@@ -310,10 +349,14 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.receipt_long_rounded, color: colorScheme.primary, size: 24),
+                        Icon(
+                          Icons.receipt_long_rounded,
+                          color: colorScheme.primary,
+                          size: 24,
+                        ),
                         const SizedBox(width: 8),
                         Text(
-                          "Cài đặt & Nội dung đơn hàng",
+                          "Cài đặt & Nội dung mã",
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
@@ -324,11 +367,11 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      "Loại đơn hàng",
+                      "Loại mã",
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: colorScheme.onSurfaceVariant,
-                          ),
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Container(
@@ -363,12 +406,75 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                         ],
                       ),
                     ),
+                    if (selectedType == "A") ...[
+                      const SizedBox(height: 16),
+
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.monetization_on_outlined,
+                            color: colorScheme.primary,
+                            size: 18,
+                          ),
+
+                          const SizedBox(width: 6),
+
+                          Text(
+                            "Đơn vị tiền:",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+
+                          const SizedBox(width: 12),
+
+                          Expanded(
+                            child: DropdownButtonFormField<double>(
+                              initialValue: _amountUnit,
+                              decoration: InputDecoration(
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              items: const [
+                                DropdownMenuItem(
+                                  value: 1.0,
+                                  child: Text(
+                                    'Nghìn đồng (×1.000)',
+                                    style: TextStyle(fontSize: 13),
+                                  ),
+                                ),
+                                DropdownMenuItem(
+                                  value: 0.001,
+                                  child: Text(
+                                    'Đồng (×1)',
+                                    style: TextStyle(fontSize: 13),
+                                  ),
+                                ),
+                              ],
+                              onChanged: (v) {
+                                setState(() {
+                                  _amountUnit = v ?? 1.0;
+                                });
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                     const SizedBox(height: 20),
                     Row(
                       children: [
                         Text(
-                          "Danh sách đơn hàng",
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          "Danh sách mã",
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
                                 fontWeight: FontWeight.bold,
                                 color: colorScheme.onSurfaceVariant,
                               ),
@@ -376,12 +482,20 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                         const Spacer(),
                         InkWell(
                           borderRadius: BorderRadius.circular(8),
-                          onTap: () => setState(() => showExample = !showExample),
+                          onTap: () =>
+                              setState(() => showExample = !showExample),
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             child: Row(
                               children: [
-                                Icon(Icons.help_outline_rounded, size: 16, color: colorScheme.primary),
+                                Icon(
+                                  Icons.help_outline_rounded,
+                                  size: 16,
+                                  color: colorScheme.primary,
+                                ),
                                 const SizedBox(width: 4),
                                 Text(
                                   showExample ? "Ẩn ví dụ" : "Xem ví dụ",
@@ -403,16 +517,23 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                         width: double.infinity,
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: colorScheme.primaryContainer.withValues(alpha: 0.15),
+                          color: colorScheme.primaryContainer.withValues(
+                            alpha: 0.15,
+                          ),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: colorScheme.primary.withValues(alpha: 0.25)),
+                          border: Border.all(
+                            color: colorScheme.primary.withValues(alpha: 0.25),
+                          ),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
                               "Định dạng nhập: [mã] x [số tiền hoặc điểm]",
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
                             ),
                             const SizedBox(height: 4),
                             Text(
@@ -445,22 +566,33 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                       maxLines: 12,
                       textAlignVertical: TextAlignVertical.top,
                       decoration: InputDecoration(
-                        hintText: "Dán hoặc nhập danh sách đơn hàng...\nVí dụ:\n90 x 10\n05 x 100",
-                        hintStyle: TextStyle(color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
+                        hintText:
+                            "Dán hoặc nhập danh sách mã...\nVí dụ:\n90 x 10\n05 x 100",
+                        hintStyle: TextStyle(
+                          color: colorScheme.onSurfaceVariant.withValues(
+                            alpha: 0.5,
+                          ),
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: colorScheme.outlineVariant),
+                          borderSide: BorderSide(
+                            color: colorScheme.outlineVariant,
+                          ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                          borderSide: BorderSide(
+                            color: colorScheme.primary,
+                            width: 2,
+                          ),
                         ),
                         filled: true,
                         fillColor: colorScheme.surfaceContainerLowest,
-                        helperText: "Lưu ý nhập tiền: 10 = 10.000 VNĐ, 100 = 100.000 VNĐ. Phân cách: x, *, -, dấu cách hoặc :",
+                        helperText:
+                            "Lưu ý nhập tiền: 10 = 10.000 VNĐ, 100 = 100.000 VNĐ. Phân cách: x, *, -, dấu cách hoặc :",
                         helperMaxLines: 2,
                       ),
                     ),
@@ -481,7 +613,7 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                   if (input.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text("Vui lòng nhập danh sách đơn hàng"),
+                        content: Text("Vui lòng nhập danh sách mã"),
                         backgroundColor: Colors.orange,
                         behavior: SnackBarBehavior.floating,
                       ),
@@ -497,7 +629,10 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                       SnackBar(
                         content: Row(
                           children: [
-                            const Icon(Icons.error_outline_rounded, color: Colors.white),
+                            const Icon(
+                              Icons.error_outline_rounded,
+                              color: Colors.white,
+                            ),
                             const SizedBox(width: 8),
                             Expanded(child: Text(e.message)),
                           ],
@@ -509,7 +644,13 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                     return;
                   }
 
-                  final totalValue = parsed.values.fold<num>(
+                  // Áp dụng đơn vị tiền vào tất cả giá trị (chỉ áp dụng cho loại A)
+                  final multiplied = parsed.map(
+                    (k, v) =>
+                        MapEntry(k, selectedType == "A" ? v * _amountUnit : v),
+                  );
+
+                  final totalValue = multiplied.values.fold<num>(
                     0,
                     (a, b) => a + b,
                   );
@@ -560,7 +701,7 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                   );
 
                   await OrderRepository().importOrders(
-                    data: parsed,
+                    data: multiplied,
                     type: selectedType,
                     customerId: customer.id,
                     ticketId: ticket.id,

@@ -12,7 +12,6 @@ import 'report.dart';
 import 'settlement_screen.dart';
 import '../utils/date_util.dart';
 import '../repositories/customer_repository.dart';
-import '../models/customer.dart';
 import '../models/configuration.dart';
 import '../services/config_service.dart';
 import 'customer_list_screen.dart';
@@ -26,6 +25,53 @@ class OrderScreen extends StatefulWidget {
 
 class _OrderScreenState extends State<OrderScreen> {
   final configBox = Hive.box<Configuration>(HiveBoxes.configBox);
+
+  static const List<String> _weekdays = [
+    "Thứ Hai",
+    "Thứ Ba",
+    "Thứ Tư",
+    "Thứ Năm",
+    "Thứ Sáu",
+    "Thứ Bảy",
+    "Chủ Nhật",
+  ];
+
+  String _formatHeaderDate(DateTime dt) {
+    final weekday = _weekdays[dt.weekday - 1];
+    final d = dt.day.toString().padLeft(2, '0');
+    final m = dt.month.toString().padLeft(2, '0');
+    return "$weekday, $d/$m/${dt.year}";
+  }
+
+  PopupMenuItem<String> _menuItem({
+    required String value,
+    required IconData icon,
+    required String label,
+    required Color color,
+  }) {
+    return PopupMenuItem(
+      value: value,
+      child: Row(
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: color, size: 18),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            label,
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+          ),
+        ],
+      ),
+    );
+  }
+
   String _formatNumber(num value) {
     final money = (value * 1000).round();
 
@@ -186,17 +232,28 @@ class _OrderScreenState extends State<OrderScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: Row(
                     children: [
-                      _AppBarIconButton(
-                        tooltip: "Quay lại",
-                        icon: Icons.arrow_back,
-                        onPressed: () => Navigator.pop(context),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 9),
+                        child: Container(
+                          width: 34,
+                          height: 34,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.18),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.storefront_rounded,
+                            size: 20,
+                            color: Colors.white,
+                          ),
+                        ),
                       ),
                       Expanded(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              "Đơn hàng",
+                              "Mã",
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               textAlign: TextAlign.center,
@@ -208,7 +265,7 @@ class _OrderScreenState extends State<OrderScreen> {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              DateUtil.today(),
+                              _formatHeaderDate(DateUtil.selectedDate),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               textAlign: TextAlign.center,
@@ -224,15 +281,9 @@ class _OrderScreenState extends State<OrderScreen> {
                       ),
 
                       /// CHỌN NGÀY
-                      IconButton(
+                      _AppBarIconButton(
                         tooltip: "Chọn ngày",
-                        padding: const EdgeInsets.all(6),
-                        constraints: const BoxConstraints(),
-                        icon: const Icon(
-                          Icons.calendar_month,
-                          color: Colors.white,
-                          size: 22,
-                        ),
+                        icon: Icons.calendar_month,
                         onPressed: () async {
                           final picked = await showDatePicker(
                             context: context,
@@ -248,15 +299,27 @@ class _OrderScreenState extends State<OrderScreen> {
                           }
                         },
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: 6),
 
                       PopupMenuButton<String>(
                         tooltip: "Báo cáo & bồi hoàn",
-                        padding: const EdgeInsets.all(6),
-                        icon: const Icon(
-                          Icons.analytics_outlined,
-                          color: Colors.white,
-                          size: 22,
+                        padding: EdgeInsets.zero,
+                        elevation: 6,
+                        offset: const Offset(0, 52),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        icon: Container(
+                          padding: const EdgeInsets.all(9),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.18),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.analytics_outlined,
+                            size: 20,
+                            color: Colors.white,
+                          ),
                         ),
                         onSelected: (value) {
                           final engine = RiskEngine();
@@ -301,56 +364,91 @@ class _OrderScreenState extends State<OrderScreen> {
                             );
                           }
                         },
-                        itemBuilder: (_) => const [
-                          PopupMenuItem(
+                        itemBuilder: (_) => [
+                          _menuItem(
                             value: "report",
-                            child: Text("Báo cáo tài chính"),
+                            icon: Icons.bar_chart_rounded,
+                            label: "Báo cáo tài chính",
+                            color: Colors.indigo,
                           ),
-                          PopupMenuItem(
+                          _menuItem(
                             value: "settlement",
-                            child: Text("Tính bồi hoàn"),
+                            icon: Icons.request_quote_outlined,
+                            label: "Tính bồi hoàn",
+                            color: Colors.orange,
                           ),
                         ],
                       ),
 
+                      const SizedBox(width: 6),
+
+                      /// MENU THÊM: gom các mục ít dùng để header luôn vừa màn hình
+                      PopupMenuButton<String>(
+                        tooltip: "Thêm",
+                        padding: EdgeInsets.zero,
+                        elevation: 6,
+                        offset: const Offset(0, 52),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        icon: Container(
+                          padding: const EdgeInsets.all(9),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.18),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.more_vert,
+                            size: 20,
+                            color: Colors.white,
+                          ),
+                        ),
+                        onSelected: (value) {
+                          if (value == "customers") {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const CustomerListScreen(),
+                              ),
+                            );
+                          } else if (value == "winning") {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const WinningScreen(),
+                              ),
+                            );
+                          } else if (value == "settings") {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const SettingsScreen(),
+                              ),
+                            );
+                          }
+                        },
+                        itemBuilder: (_) => [
+                          _menuItem(
+                            value: "customers",
+                            icon: Icons.people_alt_outlined,
+                            label: "Khách hàng",
+                            color: Colors.blue,
+                          ),
+                          _menuItem(
+                            value: "winning",
+                            icon: Icons.emoji_events_outlined,
+                            label: "Mã sinh lời",
+                            color: Colors.amber[800]!,
+                          ),
+                          _menuItem(
+                            value: "settings",
+                            icon: Icons.settings_outlined,
+                            label: "Cài đặt",
+                            color: Colors.blueGrey,
+                          ),
+                        ],
+                      ),
                       const SizedBox(width: 4),
-                      _AppBarIconButton(
-                        tooltip: "Khách hàng",
-                        icon: Icons.people_alt_outlined,
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const CustomerListScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      _AppBarIconButton(
-                        tooltip: "Vé trúng",
-                        icon: Icons.emoji_events_outlined,
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const WinningScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      _AppBarIconButton(
-                        tooltip: "Cài đặt",
-                        icon: Icons.settings_outlined,
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const SettingsScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(width: 2),
                     ],
                   ),
                 ),
@@ -397,14 +495,14 @@ class _OrderScreenState extends State<OrderScreen> {
                         ),
                         const SizedBox(height: 24),
                         Text(
-                          "Chưa có đơn hàng nào",
+                          "Chưa có mã nào",
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.titleLarge
                               ?.copyWith(fontWeight: FontWeight.w700),
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          "Bắt đầu bằng cách nhập danh sách đơn hàng loại A hoặc B",
+                          "Bắt đầu bằng cách nhập danh sách mã loại A hoặc B",
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 14,
@@ -424,7 +522,7 @@ class _OrderScreenState extends State<OrderScreen> {
                               );
                             },
                             icon: const Icon(Icons.add),
-                            label: const Text("Nhập đơn hàng"),
+                            label: const Text("Nhập mã"),
                             style: ElevatedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 20,
@@ -482,7 +580,7 @@ class _OrderScreenState extends State<OrderScreen> {
                       children: [
                         Expanded(
                           child: _StatCard(
-                            label: "Tổng đơn hàng",
+                            label: "Tổng số mã",
                             value: "${orders.length}",
                             icon: Icons.receipt_long_outlined,
                             color: colorScheme.primary,
@@ -593,7 +691,7 @@ class _OrderScreenState extends State<OrderScreen> {
                       Icon(Icons.add, color: Colors.white),
                       SizedBox(width: 8),
                       Text(
-                        "Import",
+                        "Nhập",
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -639,7 +737,7 @@ class _OrderScreenState extends State<OrderScreen> {
                       Icon(Icons.copy, color: Colors.white),
                       SizedBox(width: 8),
                       Text(
-                        "Copy",
+                        "Sao chép",
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -681,86 +779,250 @@ class _OverviewTab extends StatefulWidget {
 
 class _OverviewTabState extends State<_OverviewTab> {
   static const String _all = "__all__";
-  String selectedCode = _all;
+  String selectedType = _all;
+  final searchController = TextEditingController();
+  String keyword = "";
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final codes = widget.grouped.keys.toList()..sort();
+    final colorScheme = Theme.of(context).colorScheme;
+    final kw = keyword.toLowerCase().trim();
 
-    final filteredEntries = widget.grouped.entries
-        .where((e) => selectedCode == _all || e.key == selectedCode)
-        .toList();
+    final entries = widget.grouped.entries.toList();
+
+    final filteredEntries = entries.where((e) {
+      final parts = e.key.split('|');
+      final type = parts[0];
+      final code = parts[1];
+
+      final matchType = selectedType == _all || type == selectedType;
+      final matchCode = kw.isEmpty || code.toLowerCase().contains(kw);
+      return matchType && matchCode;
+    }).toList();
 
     return ListView(
-      padding: const EdgeInsets.only(bottom: 90),
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 90),
       children: [
-        Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            children: [
-              _MoneyCard(
-                title: "Tổng doanh thu",
-                value: widget.formatNumber(widget.totalRevenue),
-              ),
-
-              _MoneyCard(
-                title: "Hoa hồng",
-                value: widget.formatNumber(widget.commission),
-              ),
-
-              _MoneyCard(
-                title: "Thực chuyển cấp trên",
-                value: widget.formatNumber(widget.transferToUpper),
-              ),
-            ],
-          ),
+        _MoneyCard(
+          title: "Tổng doanh thu",
+          value: widget.formatNumber(widget.totalRevenue),
+          icon: Icons.monetization_on_outlined,
+          color: Colors.blue,
+        ),
+        const SizedBox(height: 10),
+        _MoneyCard(
+          title: "Hoa hồng",
+          value: widget.formatNumber(widget.commission),
+          icon: Icons.percent_outlined,
+          color: Colors.teal,
+        ),
+        const SizedBox(height: 10),
+        _MoneyCard(
+          title: "Thực chuyển cấp trên",
+          value: widget.formatNumber(widget.transferToUpper),
+          icon: Icons.send_and_archive_outlined,
+          color: Colors.orange,
         ),
 
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: DropdownButtonFormField<String>(
-            initialValue: selectedCode,
-            decoration: InputDecoration(
-              isDense: true,
-              labelText: "Lọc theo mã sản phẩm",
-              prefixIcon: const Icon(Icons.filter_alt_outlined, size: 20),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+        const SizedBox(height: 16),
+
+        _TypeFilterChips(
+          selected: selectedType,
+          onChanged: (v) => setState(() => selectedType = v),
+        ),
+
+        const SizedBox(height: 10),
+
+        TextField(
+          controller: searchController,
+          onChanged: (v) => setState(() => keyword = v),
+          decoration: InputDecoration(
+            isDense: true,
+            hintText: "Tìm theo mã sản phẩm...",
+            prefixIcon: const Icon(Icons.search, size: 20),
+            suffixIcon: keyword.isEmpty
+                ? null
+                : IconButton(
+                    icon: const Icon(Icons.clear, size: 18),
+                    onPressed: () {
+                      searchController.clear();
+                      setState(() => keyword = "");
+                    },
+                  ),
+            filled: true,
+            fillColor: colorScheme.surface,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(24),
+              borderSide: BorderSide(color: colorScheme.outlineVariant),
             ),
-            items: [
-              const DropdownMenuItem(value: _all, child: Text("Tất cả")),
-              ...codes.map((c) => DropdownMenuItem(value: c, child: Text(c))),
-            ],
-            onChanged: (v) => setState(() => selectedCode = v ?? _all),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(24),
+              borderSide: BorderSide(color: colorScheme.outlineVariant),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(24),
+              borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
+            ),
           ),
         ),
 
-        const Divider(),
+        const SizedBox(height: 12),
 
         if (filteredEntries.isEmpty)
           const Padding(
-            padding: EdgeInsets.all(24),
+            padding: EdgeInsets.symmetric(vertical: 32),
             child: Center(child: Text("Không tìm thấy mã sản phẩm")),
           )
         else
           ...filteredEntries.map((e) {
             final parts = e.key.split('|');
-
             final type = parts[0];
             final code = parts[1];
+            final typeColor = type == "A" ? Colors.indigo : Colors.teal;
 
-            return ListTile(
-              title: Text(
-                code,
-                style: const TextStyle(fontWeight: FontWeight.bold),
+            return Card(
+              elevation: 1,
+              margin: const EdgeInsets.only(bottom: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
               ),
-              subtitle: Text("Loại $type"),
-              trailing: Text(widget.formatNumber(e.value)),
+              child: ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: typeColor.withValues(alpha: 0.15),
+                  child: Text(
+                    type,
+                    style: TextStyle(
+                      color: typeColor,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                title: Text(
+                  code,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                subtitle: Text("Loại $type"),
+                trailing: Text(
+                  widget.formatNumber(e.value),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
             );
           }),
       ],
+    );
+  }
+}
+
+/// Hàng chip chọn nhanh Loại A / Loại B / Tất cả
+class _TypeFilterChips extends StatelessWidget {
+  static const String _all = "__all__";
+  final String selected;
+  final ValueChanged<String> onChanged;
+
+  const _TypeFilterChips({required this.selected, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    final options = [
+      (_all, "Tất cả", Theme.of(context).colorScheme.primary),
+      ("A", "Loại A", Colors.indigo),
+      ("B", "Loại B", Colors.teal),
+    ];
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: options.map((opt) {
+          final value = opt.$1;
+          final label = opt.$2;
+          final color = opt.$3;
+          final isSelected = selected == value;
+
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: ChoiceChip(
+              label: Text(label),
+              selected: isSelected,
+              onSelected: (_) => onChanged(value),
+              showCheckmark: false,
+              labelStyle: TextStyle(
+                color: isSelected ? Colors.white : color,
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+              selectedColor: color,
+              backgroundColor: color.withValues(alpha: 0.08),
+              side: BorderSide(color: color.withValues(alpha: 0.3)),
+              shape: const StadiumBorder(),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+/// Dropdown dạng viên thuốc (pill), rõ ràng là 1 dropdown thay vì trông giống ô nhập text
+class _PillDropdown<T> extends StatelessWidget {
+  final IconData icon;
+  final T value;
+  final Color accent;
+  final List<DropdownMenuItem<T>> items;
+  final ValueChanged<T?> onChanged;
+
+  const _PillDropdown({
+    required this.icon,
+    required this.value,
+    required this.accent,
+    required this.items,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 46,
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(23),
+        border: Border.all(color: accent.withValues(alpha: 0.25)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: accent),
+          const SizedBox(width: 8),
+          Expanded(
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<T>(
+                value: value,
+                isExpanded: true,
+                icon: Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  color: accent,
+                  size: 20,
+                ),
+                style: const TextStyle(
+                  color: Colors.black87,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+                items: items,
+                onChanged: onChanged,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -779,8 +1041,15 @@ class _DetailTab extends StatefulWidget {
 class _DetailTabState extends State<_DetailTab> {
   static const String _all = "__all__";
   final customerRepo = CustomerRepository();
-  String selectedCustomerId = _all;
-  String selectedCode = _all;
+  final searchController = TextEditingController();
+  String keyword = "";
+  String selectedType = _all;
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
 
   String _two(int n) => n.toString().padLeft(2, '0');
 
@@ -791,150 +1060,231 @@ class _DetailTabState extends State<_DetailTab> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final config = ConfigService().getConfig();
-    final codes = widget.orders.map((o) => o.productCode).toSet().toList()
-      ..sort();
-
-    final customerIds = widget.orders.map((o) => o.customerId).toSet();
-    final customers =
-        customerIds
-            .map((id) => customerRepo.getById(id))
-            .whereType<Customer>()
-            .toList()
-          ..sort((a, b) => a.name.compareTo(b.name));
+    final kw = keyword.toLowerCase().trim();
 
     final filteredOrders = widget.orders.where((order) {
-      final matchCustomer =
-          selectedCustomerId == _all || order.customerId == selectedCustomerId;
-      final matchCode =
-          selectedCode == _all || order.productCode == selectedCode;
-      return matchCustomer && matchCode;
+      final matchType = selectedType == _all || order.type == selectedType;
+      if (!matchType) return false;
+      if (kw.isEmpty) return true;
+
+      final customer = customerRepo.getById(order.customerId);
+
+      return order.productCode.toLowerCase().contains(kw) ||
+          (customer?.name.toLowerCase().contains(kw) ?? false) ||
+          (customer?.phone.toLowerCase().contains(kw) ?? false);
     }).toList();
 
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-          child: DropdownButtonFormField<String>(
-            initialValue: selectedCustomerId,
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+          child: TextField(
+            controller: searchController,
+            onChanged: (v) => setState(() => keyword = v),
             decoration: InputDecoration(
               isDense: true,
-              labelText: "Lọc theo khách hàng",
-              prefixIcon: const Icon(Icons.person_outline, size: 20),
+              hintText: "Tìm theo tên, mã, SĐT...",
+              prefixIcon: const Icon(Icons.search, size: 20),
+              suffixIcon: keyword.isEmpty
+                  ? null
+                  : IconButton(
+                      icon: const Icon(Icons.clear, size: 18),
+                      onPressed: () {
+                        searchController.clear();
+                        setState(() => keyword = "");
+                      },
+                    ),
+              filled: true,
+              fillColor: colorScheme.surface,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(24),
+                borderSide: BorderSide(color: colorScheme.outlineVariant),
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(24),
+                borderSide: BorderSide(color: colorScheme.outlineVariant),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(24),
+                borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
+              ),
             ),
-            items: [
-              const DropdownMenuItem(value: _all, child: Text("Tất cả")),
-              ...customers.map(
-                (c) => DropdownMenuItem(
-                  value: c.id,
-                  child: Text(
-                    "${c.name} - ${c.phone}",
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ),
-            ],
-            onChanged: (v) => setState(() => selectedCustomerId = v ?? _all),
           ),
         ),
         Padding(
-          padding: const EdgeInsets.all(12),
-          child: DropdownButtonFormField<String>(
-            initialValue: selectedCode,
-            decoration: InputDecoration(
-              isDense: true,
-              labelText: "Lọc theo mã sản phẩm",
-              prefixIcon: const Icon(Icons.filter_alt_outlined, size: 20),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-            ),
-            items: [
-              const DropdownMenuItem(value: _all, child: Text("Tất cả")),
-              ...codes.map((c) => DropdownMenuItem(value: c, child: Text(c))),
+          padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+          child: _PillDropdown<String>(
+            icon: Icons.category_outlined,
+            value: selectedType,
+            accent: selectedType == "A"
+                ? Colors.indigo
+                : selectedType == "B"
+                ? Colors.teal
+                : colorScheme.primary,
+            items: const [
+              DropdownMenuItem(value: _all, child: Text("Tất cả loại")),
+              DropdownMenuItem(value: "A", child: Text("Loại A")),
+              DropdownMenuItem(value: "B", child: Text("Loại B")),
             ],
-            onChanged: (v) => setState(() => selectedCode = v ?? _all),
+            onChanged: (v) => setState(() => selectedType = v ?? _all),
           ),
         ),
         Expanded(
           child: filteredOrders.isEmpty
-              ? const Center(child: Text("Không tìm thấy kết quả"))
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.search_off_rounded,
+                        size: 48,
+                        color: Colors.grey[400],
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        "Không tìm thấy kết quả",
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                )
               : ListView.builder(
-                  padding: const EdgeInsets.only(bottom: 90),
+                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 90),
                   itemCount: filteredOrders.length,
                   itemBuilder: (context, index) {
                     final order = filteredOrders[index];
 
                     final customer = customerRepo.getById(order.customerId);
+                    final isTypeA = order.type == "A";
+                    final typeColor = isTypeA ? Colors.indigo : Colors.teal;
 
-                    final value = order.type == "A"
-                        ? order.amount
-                        : order.unit * config.ticketPriceB;
                     return Card(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
+                      elevation: 1,
+                      margin: const EdgeInsets.only(bottom: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
                       ),
-                      child: ListTile(
-                        title: Text(order.productCode),
-
-                        subtitle: Column(
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              "${customer?.name ?? "Không rõ"}"
-                              " - "
-                              "${customer?.phone ?? ""}",
-                            ),
-
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.access_time,
-                                  size: 13,
-                                  color: Colors.grey[600],
+                            CircleAvatar(
+                              radius: 22,
+                              backgroundColor: typeColor.withValues(
+                                alpha: 0.15,
+                              ),
+                              child: Text(
+                                order.type,
+                                style: TextStyle(
+                                  color: typeColor,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
                                 ),
-                                const SizedBox(width: 4),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "Mã ${order.productCode}",
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.person_outline,
+                                        size: 13,
+                                        color: Colors.grey[600],
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Expanded(
+                                        child: Text(
+                                          customer?.name ?? "Không rõ",
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: 12.5,
+                                            color: Colors.grey[700],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  if ((customer?.phone ?? "").isNotEmpty) ...[
+                                    const SizedBox(height: 2),
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.phone_outlined,
+                                          size: 13,
+                                          color: Colors.grey[600],
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          customer!.phone,
+                                          style: TextStyle(
+                                            fontSize: 12.5,
+                                            color: Colors.grey[700],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                  const SizedBox(height: 2),
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.access_time,
+                                        size: 13,
+                                        color: Colors.grey[500],
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        _formatDateTime(order.createdAt),
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey[500],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
                                 Text(
-                                  _formatDateTime(order.createdAt),
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey[600],
+                                  isTypeA
+                                      ? widget.formatNumber(order.amount)
+                                      : "${order.unit} điểm",
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
+                                if (!isTypeA)
+                                  Text(
+                                    widget.formatNumber(
+                                      order.unit * config.ticketPriceB,
+                                    ),
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
                               ],
                             ),
-                          ],
-                        ),
-
-                        trailing: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              order.type == "A"
-                                  ? widget.formatNumber(order.amount)
-                                  : "${order.unit} điểm",
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-
-                            if (order.type == "B")
-                              Text(
-                                widget.formatNumber(
-                                  order.unit * config.ticketPriceB,
-                                ),
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.grey,
-                                ),
-                              ),
                           ],
                         ),
                       ),
@@ -950,18 +1300,54 @@ class _DetailTabState extends State<_DetailTab> {
 class _MoneyCard extends StatelessWidget {
   final String title;
   final String value;
+  final IconData icon;
+  final Color color;
 
-  const _MoneyCard({required this.title, required this.value});
+  const _MoneyCard({
+    required this.title,
+    required this.value,
+    required this.icon,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        title: Text(title),
-        trailing: Text(
-          value,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-        ),
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: color, size: 22),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Text(
+              title,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+          Text(
+            value,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+        ],
       ),
     );
   }

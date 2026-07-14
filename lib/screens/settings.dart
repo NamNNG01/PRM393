@@ -18,14 +18,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late final TextEditingController _refundRateAController;
   late final TextEditingController _commissionPerPointBController;
   late final TextEditingController _refundRateBController;
+  late TextEditingController _ticketPriceBController;
 
   @override
   void initState() {
     super.initState();
+
     config = configService.getConfig();
-    _refundRateAController = TextEditingController(text: config.refundRateA.toString());
-    _commissionPerPointBController = TextEditingController(text: config.commissionPerPointB.toString());
-    _refundRateBController = TextEditingController(text: config.refundRateB.toString());
+
+    _refundRateAController = TextEditingController(
+      text: config.refundRateA.toString(),
+    );
+
+    _commissionPerPointBController = TextEditingController(
+      text: config.commissionPerPointB.toString(),
+    );
+
+    _refundRateBController = TextEditingController(
+      text: config.refundRateB.toString(),
+    );
+
+    _ticketPriceBController = TextEditingController(
+      text: config.ticketPriceB.toString(),
+    );
   }
 
   @override
@@ -33,15 +48,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _refundRateAController.dispose();
     _commissionPerPointBController.dispose();
     _refundRateBController.dispose();
+    _ticketPriceBController.dispose();
+
     super.dispose();
   }
 
   void save() {
     configService.saveConfig(config);
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(
+    ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: const Row(
           children: [
@@ -51,9 +66,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ],
         ),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
   }
@@ -100,7 +113,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     Positioned(
                       left: 4,
                       child: IconButton(
-                        icon: Icon(Icons.arrow_back, color: colorScheme.onPrimary),
+                        icon: Icon(
+                          Icons.arrow_back,
+                          color: colorScheme.onPrimary,
+                        ),
                         onPressed: () => Navigator.pop(context),
                       ),
                     ),
@@ -120,7 +136,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                side: BorderSide(
+                  color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                ),
               ),
               color: colorScheme.surface,
               margin: const EdgeInsets.only(bottom: 16),
@@ -145,7 +163,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         const SizedBox(width: 12),
                         const Text(
-                          "Đơn hàng Loại A",
+                          "Mã Loại A",
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -168,7 +186,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     const SizedBox(height: 16),
                     _buildNumberInput(
-                      title: "Tỷ lệ bồi hoàn loại A",
+                      title: "Tỷ lệ bồi hoàn loại A (lần)",
                       controller: _refundRateAController,
                       prefixIcon: Icons.replay_rounded,
                       color: Colors.indigo,
@@ -187,7 +205,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                side: BorderSide(
+                  color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                ),
               ),
               color: colorScheme.surface,
               margin: const EdgeInsets.only(bottom: 16),
@@ -212,7 +232,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         const SizedBox(width: 12),
                         const Text(
-                          "Đơn hàng Loại B",
+                          "Mã Loại B",
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -220,6 +240,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                       ],
                     ),
+                    _buildNumberInput(
+                      title: "Giá 1 điểm loại B (nghìn VNĐ)",
+                      controller: _ticketPriceBController,
+                      prefixIcon: Icons.payments_outlined,
+                      color: Colors.teal,
+                      defaultValue: config.ticketPriceB,
+                      onChanged: (v) {
+                        config.ticketPriceB = v;
+                      },
+                    ),
+
+                    const SizedBox(height: 16),
                     const Divider(height: 24),
                     _buildNumberInput(
                       title: "Hoa hồng loại B / đơn vị",
@@ -233,7 +265,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     const SizedBox(height: 16),
                     _buildNumberInput(
-                      title: "Tỷ lệ bồi hoàn loại B",
+                      title: "Tỷ lệ bồi hoàn loại B (nghìn VND)",
                       controller: _refundRateBController,
                       prefixIcon: Icons.replay_rounded,
                       color: Colors.teal,
@@ -315,10 +347,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             Text(
               title,
-              style: const TextStyle(
-                fontWeight: FontWeight.w500,
-                fontSize: 14,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
             ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -373,10 +402,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       children: [
         Text(
           title,
-          style: const TextStyle(
-            fontWeight: FontWeight.w500,
-            fontSize: 14,
-          ),
+          style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
         ),
         const SizedBox(height: 8),
         TextField(
@@ -389,7 +415,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             prefixIcon: Icon(prefixIcon, color: color, size: 20),
             filled: true,
             fillColor: Colors.grey[50],
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(color: Colors.grey[300]!),

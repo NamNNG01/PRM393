@@ -116,8 +116,8 @@ class _ReportScreenState extends State<ReportScreen> {
             ),
             tabs: const [
               Tab(icon: Icon(Icons.analytics_outlined), text: "Tổng quan"),
-              Tab(icon: Icon(Icons.payments_outlined), text: "Vé Loại A"),
-              Tab(icon: Icon(Icons.stars_outlined), text: "Vé Loại B"),
+              Tab(icon: Icon(Icons.payments_outlined), text: "Mã Loại A"),
+              Tab(icon: Icon(Icons.stars_outlined), text: "Mã Loại B"),
             ],
           ),
         ),
@@ -270,16 +270,16 @@ class _ReportScreenState extends State<ReportScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  "Phân chia theo Loại hình vé",
+                  "Phân chia theo Loại hình Mã",
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
                 const SizedBox(height: 18),
-                _buildBreakdownRow("Vé Loại A (Type A)", revA, Colors.indigo),
+                _buildBreakdownRow("Mã Loại A (Type A)", revA, Colors.indigo),
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 12),
                   child: Divider(height: 1),
                 ),
-                _buildBreakdownRow("Vé Loại B (Type B)", revB, Colors.teal),
+                _buildBreakdownRow("Mã Loại B (Type B)", revB, Colors.teal),
               ],
             ),
           ),
