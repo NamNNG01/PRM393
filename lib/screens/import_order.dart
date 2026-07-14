@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import '../services/order_parser.dart';
 import '../repositories/order_repository.dart';
 import '../models/customer.dart';
 import '../repositories/customer_repository.dart';
 
-import '../models/ticket.dart';
 import '../repositories/ticket_repository.dart';
 
 import '../utils/date_util.dart';
@@ -50,6 +48,56 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
     super.dispose();
   }
 
+  Map<String, double> _parseAndValidateInput(String input) {
+    final Map<String, double> result = {};
+    final lines = input.split('\n');
+
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i].trim();
+      if (line.isEmpty) continue;
+
+      final lineNumber = i + 1;
+      
+      final clean = line
+          .replaceAll(',', ' ')
+          .replaceAll(':', ' ')
+          .replaceAll('*', ' ')
+          .replaceAll('-', ' ')
+          .replaceAll('x', ' ')
+          .replaceAll('X', ' ')
+          .trim();
+
+      final parts = clean.split(RegExp(r'\s+'));
+
+      if (parts.length < 2) {
+        throw FormatException(
+          "Dòng $lineNumber: Sai định dạng '$line'. Định dạng đúng ví dụ: 90 x 50000",
+        );
+      }
+
+      final codeStr = parts[0];
+      final codeInt = int.tryParse(codeStr);
+      if (codeInt == null || codeInt < 0 || codeInt > 99) {
+        throw FormatException(
+          "Dòng $lineNumber: Mã '$codeStr' không hợp lệ. Chỉ chấp nhận mã từ 00 đến 99.",
+        );
+      }
+
+      final valueStr = parts[1];
+      final value = double.tryParse(valueStr);
+      if (value == null || value <= 0) {
+        throw FormatException(
+          "Dòng $lineNumber: Số tiền '$valueStr' không hợp lệ. Phải là số dương.",
+        );
+      }
+
+      final normalizedCode = codeInt.toString().padLeft(2, '0');
+      result[normalizedCode] = (result[normalizedCode] ?? 0) + value;
+    }
+
+    return result;
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -82,7 +130,7 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                   alignment: Alignment.center,
                   children: [
                     Text(
-                      "Nhập đơn hàng",
+                      "Nhập Đơn Hàng",
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 20,
@@ -93,8 +141,9 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                       left: 4,
                       child: IconButton(
                         icon: Icon(
-                          Icons.arrow_back,
+                          Icons.arrow_back_ios_new_rounded,
                           color: colorScheme.onPrimary,
+                          size: 20,
                         ),
                         onPressed: () => Navigator.pop(context),
                       ),
@@ -106,227 +155,322 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
           ),
         ),
       ),
-
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 10),
-
-            Text(
-              "Khách hàng",
-              style: Theme.of(
-                context,
-              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-            ),
-
-            const SizedBox(height: 10),
-
-            if (customers.isNotEmpty && !showAddCustomer)
-              DropdownButtonFormField<Customer>(
-                initialValue: selectedCustomer,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: "Chọn khách hàng",
-                ),
-                items: customers.map((customer) {
-                  return DropdownMenuItem(
-                    value: customer,
-                    child: Text("${customer.name} - ${customer.phone}"),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    selectedCustomer = value;
-                  });
-                },
+            // CARD 1: KHÁCH HÀNG
+            Card(
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(color: colorScheme.outlineVariant, width: 1),
               ),
-
-            const SizedBox(height: 10),
-
-            OutlinedButton.icon(
-              icon: Icon(showAddCustomer ? Icons.close : Icons.person_add),
-              label: Text(showAddCustomer ? "Hủy tạo khách" : "Thêm khách mới"),
-              onPressed: () {
-                setState(() {
-                  showAddCustomer = !showAddCustomer;
-
-                  if (showAddCustomer) {
-                    /// chuyển sang chế độ tạo mới
-
-                    selectedCustomer = null;
-
-                    customerNameController.clear();
-                    phoneController.clear();
-                  } else {
-                    /// quay lại dropdown
-
-                    customerNameController.clear();
-                    phoneController.clear();
-                  }
-                });
-              },
-            ),
-            if (showAddCustomer || customers.isEmpty) ...[
-              const SizedBox(height: 10),
-
-              TextField(
-                controller: customerNameController,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: "Tên khách",
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              TextField(
-                controller: phoneController,
-                keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: "Số điện thoại",
-                ),
-              ),
-            ],
-
-            const SizedBox(height: 20),
-            Text(
-              "Loại đơn hàng",
-              style: Theme.of(
-                context,
-              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 10),
-
-            // Chọn loại đơn hàng dạng segmented, dễ chạm trên mobile
-            Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHigh,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _TypeOption(
-                      label: "Loại A",
-                      subtitle: "Theo số tiền",
-                      icon: Icons.payments_outlined,
-                      selected: selectedType == "A",
-                      color: Colors.indigo,
-                      onTap: () => setState(() => selectedType = "A"),
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: _TypeOption(
-                      label: "Loại B",
-                      subtitle: "Theo điểm",
-                      icon: Icons.stars_outlined,
-                      selected: selectedType == "B",
-                      color: Colors.teal,
-                      onTap: () => setState(() => selectedType = "B"),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            Row(
-              children: [
-                Text(
-                  "Danh sách đơn hàng",
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-                ),
-                const Spacer(),
-                InkWell(
-                  borderRadius: BorderRadius.circular(8),
-                  onTap: () => setState(() => showExample = !showExample),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 4,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
+              color: colorScheme.surface,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       children: [
-                        Icon(
-                          Icons.lightbulb_outline,
-                          size: 16,
-                          color: colorScheme.primary,
-                        ),
-                        const SizedBox(width: 4),
+                        Icon(Icons.person_pin_rounded, color: colorScheme.primary, size: 24),
+                        const SizedBox(width: 8),
                         Text(
-                          showExample ? "Ẩn ví dụ" : "Xem ví dụ",
+                          "Thông tin khách hàng",
                           style: TextStyle(
-                            fontSize: 13,
-                            color: colorScheme.primary,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: colorScheme.onSurface,
                           ),
                         ),
                       ],
                     ),
-                  ),
-                ),
-              ],
-            ),
-
-            if (showExample) ...[
-              const SizedBox(height: 8),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: colorScheme.primary.withValues(alpha: 0.06),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: colorScheme.primary.withValues(alpha: 0.2),
-                  ),
-                ),
-                child: const Text(
-                  "68 x5000000\n72 x3000000\n68 x1000000\n\nhoặc\n\n23 x1000\n79 x500\n23 x200",
-                  style: TextStyle(
-                    fontFamily: 'monospace',
-                    fontSize: 13,
-                    height: 1.5,
-                  ),
+                    const SizedBox(height: 16),
+                    if (customers.isNotEmpty && !showAddCustomer) ...[
+                      DropdownButtonFormField<Customer>(
+                        initialValue: selectedCustomer,
+                        decoration: InputDecoration(
+                          prefixIcon: Icon(Icons.assignment_ind_outlined, color: colorScheme.primary),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: colorScheme.outlineVariant),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                          ),
+                          labelText: "Chọn khách hàng có sẵn",
+                          filled: true,
+                          fillColor: colorScheme.surfaceContainerLowest,
+                        ),
+                        items: customers.map((customer) {
+                          return DropdownMenuItem(
+                            value: customer,
+                            child: Text("${customer.name} - ${customer.phone}"),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            selectedCustomer = value;
+                          });
+                        },
+                      ),
+                    ],
+                    if (showAddCustomer || customers.isEmpty) ...[
+                      TextField(
+                        controller: customerNameController,
+                        decoration: InputDecoration(
+                          prefixIcon: Icon(Icons.person_outline, color: colorScheme.primary),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: colorScheme.outlineVariant),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                          ),
+                          labelText: "Tên khách hàng mới",
+                          filled: true,
+                          fillColor: colorScheme.surfaceContainerLowest,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: phoneController,
+                        keyboardType: TextInputType.phone,
+                        decoration: InputDecoration(
+                          prefixIcon: Icon(Icons.phone_outlined, color: colorScheme.primary),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: colorScheme.outlineVariant),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                          ),
+                          labelText: "Số điện thoại",
+                          filled: true,
+                          fillColor: colorScheme.surfaceContainerLowest,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton.icon(
+                        icon: Icon(showAddCustomer ? Icons.close : Icons.person_add, size: 18),
+                        label: Text(
+                          showAddCustomer ? "Hủy tạo khách" : "Thêm khách mới",
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            showAddCustomer = !showAddCustomer;
+                            if (showAddCustomer) {
+                              selectedCustomer = null;
+                              customerNameController.clear();
+                              phoneController.clear();
+                            } else {
+                              customerNameController.clear();
+                              phoneController.clear();
+                            }
+                          });
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
+            ),
+            const SizedBox(height: 16),
 
-            const SizedBox(height: 10),
-
-            ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 200),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: colorScheme.surface,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: colorScheme.outlineVariant),
-                ),
-                child: TextField(
-                  controller: inputController,
-                  minLines: 8,
-                  maxLines: null,
-                  textAlignVertical: TextAlignVertical.top,
-                  decoration: const InputDecoration(
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.all(16),
-                    hintText:
-                        "Dán hoặc nhập danh sách đơn hàng, mỗi dòng một mã...",
-                  ),
+            // CARD 2: CÀI ĐẶT & NỘI DUNG ĐƠN HÀNG
+            Card(
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(color: colorScheme.outlineVariant, width: 1),
+              ),
+              color: colorScheme.surface,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.receipt_long_rounded, color: colorScheme.primary, size: 24),
+                        const SizedBox(width: 8),
+                        Text(
+                          "Cài đặt & Nội dung đơn hàng",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: colorScheme.onSurface,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      "Loại đơn hàng",
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceContainerHigh,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: _TypeOption(
+                              label: "Loại A",
+                              subtitle: "Theo số tiền",
+                              icon: Icons.payments_outlined,
+                              selected: selectedType == "A",
+                              color: Colors.indigo,
+                              onTap: () => setState(() => selectedType = "A"),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: _TypeOption(
+                              label: "Loại B",
+                              subtitle: "Theo điểm",
+                              icon: Icons.stars_outlined,
+                              selected: selectedType == "B",
+                              color: Colors.teal,
+                              onTap: () => setState(() => selectedType = "B"),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Text(
+                          "Danh sách đơn hàng",
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                        ),
+                        const Spacer(),
+                        InkWell(
+                          borderRadius: BorderRadius.circular(8),
+                          onTap: () => setState(() => showExample = !showExample),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            child: Row(
+                              children: [
+                                Icon(Icons.help_outline_rounded, size: 16, color: colorScheme.primary),
+                                const SizedBox(width: 4),
+                                Text(
+                                  showExample ? "Ẩn ví dụ" : "Xem ví dụ",
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: colorScheme.primary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (showExample) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: colorScheme.primaryContainer.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: colorScheme.primary.withValues(alpha: 0.25)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              "Định dạng nhập: [mã] x [số tiền hoặc điểm]",
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              "• Mã phải từ 00 đến 99.\n"
+                              "• Quy ước nhập tiền (Loại A):\n"
+                              "  - 10 = 10.000 VNĐ\n"
+                              "  - 100 = 100.000 VNĐ\n"
+                              "  - 1000 = 1.000.000 VNĐ\n\n"
+                              "Ví dụ hợp lệ:\n"
+                              "90 x 10 (Mã 90, số tiền 10.000 VNĐ)\n"
+                              "23 x 100 (Mã 23, số tiền 100.000 VNĐ)\n\n"
+                              "Ví dụ không hợp lệ:\n"
+                              "100 x 50 (Lỗi vì Mã > 99)\n"
+                              "abc x 10 (Lỗi vì Mã không phải số)",
+                              style: TextStyle(
+                                fontFamily: 'monospace',
+                                fontSize: 12,
+                                color: colorScheme.onSurfaceVariant,
+                                height: 1.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: inputController,
+                      minLines: 6,
+                      maxLines: 12,
+                      textAlignVertical: TextAlignVertical.top,
+                      decoration: InputDecoration(
+                        hintText: "Dán hoặc nhập danh sách đơn hàng...\nVí dụ:\n90 x 10\n05 x 100",
+                        hintStyle: TextStyle(color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: colorScheme.outlineVariant),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                        ),
+                        filled: true,
+                        fillColor: colorScheme.surfaceContainerLowest,
+                        helperText: "Lưu ý nhập tiền: 10 = 10.000 VNĐ, 100 = 100.000 VNĐ. Phân cách: x, *, -, dấu cách hoặc :",
+                        helperMaxLines: 2,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
+            const SizedBox(height: 24),
 
-            const SizedBox(height: 20),
-
+            // NÚT NHẬP
             SizedBox(
               width: double.infinity,
               height: 54,
@@ -338,12 +482,33 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text("Vui lòng nhập danh sách đơn hàng"),
+                        backgroundColor: Colors.orange,
+                        behavior: SnackBarBehavior.floating,
                       ),
                     );
                     return;
                   }
 
-                  final parsed = OrderParser.parseInput(input);
+                  Map<String, double> parsed;
+                  try {
+                    parsed = _parseAndValidateInput(input);
+                  } on FormatException catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Row(
+                          children: [
+                            const Icon(Icons.error_outline_rounded, color: Colors.white),
+                            const SizedBox(width: 8),
+                            Expanded(child: Text(e.message)),
+                          ],
+                        ),
+                        backgroundColor: colorScheme.error,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                    return;
+                  }
+
                   final totalValue = parsed.values.fold<num>(
                     0,
                     (a, b) => a + b,
@@ -358,7 +523,11 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
 
                     if (name.isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Nhập tên khách hàng")),
+                        const SnackBar(
+                          content: Text("Nhập tên khách hàng"),
+                          backgroundColor: Colors.orange,
+                          behavior: SnackBarBehavior.floating,
+                        ),
                       );
                       return;
                     }
@@ -374,6 +543,8 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text("Vui lòng chọn khách hàng"),
+                          backgroundColor: Colors.orange,
+                          behavior: SnackBarBehavior.floating,
                         ),
                       );
                       return;
