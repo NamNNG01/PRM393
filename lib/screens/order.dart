@@ -15,6 +15,8 @@ import '../repositories/customer_repository.dart';
 import '../models/configuration.dart';
 import '../services/config_service.dart';
 import 'customer_list_screen.dart';
+import '../services/auth_service.dart';
+import 'login_screen.dart';
 
 class OrderScreen extends StatefulWidget {
   const OrderScreen({super.key});
@@ -25,6 +27,241 @@ class OrderScreen extends StatefulWidget {
 
 class _OrderScreenState extends State<OrderScreen> {
   final configBox = Hive.box<Configuration>(HiveBoxes.configBox);
+
+  void _showLoginRequiredDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.lock_rounded, color: Colors.indigo),
+            SizedBox(width: 8),
+            Text("Yêu cầu đăng nhập"),
+          ],
+        ),
+        content: const Text(
+          "Bạn cần đăng nhập để truy cập tính năng Báo cáo tài chính Premium.\n\n"
+          "Đăng ký tài khoản mới từ ngày 13/07 đến 26/07/2026 để được tặng 30 ngày sử dụng Premium miễn phí!",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Hủy"),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+              );
+            },
+            child: const Text("Đăng nhập"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPremiumRequiredDialog(BuildContext context, String reason) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.workspace_premium_rounded, color: Colors.amber),
+            SizedBox(width: 8),
+            Text("Yêu cầu Premium"),
+          ],
+        ),
+        content: Text(
+          "Tính năng này chỉ dành cho tài khoản Premium.\n\n"
+          "Trạng thái hiện tại: $reason",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Đóng"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAccountDialog(BuildContext context) async {
+    final authService = AuthService();
+    final user = authService.currentUser;
+
+    if (user == null) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text("Tài khoản"),
+          content: const Text("Bạn chưa đăng nhập."),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Đóng"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                );
+              },
+              child: const Text("Đăng nhập / Đăng ký"),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    final status = await authService.checkPremiumStatus();
+    if (context.mounted) {
+      Navigator.pop(context); // Close loading dialog
+    }
+
+    final email = user.email ?? "Chưa có email";
+    final name = user.displayName ?? "Chưa đặt tên";
+    final isPremium = status['isPremium'] == true;
+    final expiryDate = status['expiryDate'] as DateTime?;
+
+    String premiumText = "Loại tài khoản: Thường (Free)";
+    if (isPremium) {
+      final format = expiryDate != null
+          ? "${expiryDate.day}/${expiryDate.month}/${expiryDate.year}"
+          : "Không giới hạn";
+      premiumText = "Loại tài khoản: Premium 🌟\n Hạn dùng: $format";
+    } else {
+      premiumText = "Loại tài khoản: Thường (Free)\n Lý do: ${status['reason']}";
+    }
+
+    if (context.mounted) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Row(
+            children: [
+              const Icon(Icons.account_circle, color: Colors.indigo, size: 28),
+              const SizedBox(width: 8),
+              Expanded(child: Text(name)),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text("Email: $email", style: const TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isPremium ? Colors.amber[50] : Colors.grey[100],
+                  border: Border.all(color: isPremium ? Colors.amber : Colors.grey),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      isPremium ? Icons.workspace_premium_rounded : Icons.star_border,
+                      color: isPremium ? Colors.amber[800] : Colors.grey,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        premiumText,
+                        style: TextStyle(
+                          color: isPremium ? Colors.amber[900] : Colors.black87,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Đóng"),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                await authService.logout();
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Đã đăng xuất thành công!"),
+                      backgroundColor: Colors.blueGrey,
+                    ),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red[100],
+                foregroundColor: Colors.red,
+              ),
+              child: const Text("Đăng xuất"),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  Future<void> _navigateToReport(BuildContext context, dynamic resultA, dynamic resultB) async {
+    final authService = AuthService();
+    final user = authService.currentUser;
+
+    if (user == null) {
+      _showLoginRequiredDialog(context);
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    final premiumStatus = await authService.checkPremiumStatus();
+    if (context.mounted) {
+      Navigator.pop(context); // Close loading dialog
+    }
+
+    if (premiumStatus['isPremium'] == true) {
+      if (context.mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ReportScreen(
+              resultA: resultA,
+              resultB: resultB,
+            ),
+          ),
+        );
+      }
+    } else {
+      if (context.mounted) {
+        _showPremiumRequiredDialog(context, premiumStatus['reason'] ?? 'Yêu cầu tài khoản Premium');
+      }
+    }
+  }
 
   static const List<String> _weekdays = [
     "Thứ Hai",
@@ -220,7 +457,7 @@ class _OrderScreenState extends State<OrderScreen> {
                 end: Alignment.bottomRight,
                 colors: [
                   colorScheme.primary,
-                  colorScheme.primary.withOpacity(0.8),
+                  colorScheme.primary.withValues(alpha: 0.8),
                 ],
               ),
             ),
@@ -343,15 +580,7 @@ class _OrderScreenState extends State<OrderScreen> {
                           final resultB = engine.processTypeB(dataB);
 
                           if (value == "report") {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => ReportScreen(
-                                  resultA: resultA,
-                                  resultB: resultB,
-                                ),
-                              ),
-                            );
+                            _navigateToReport(context, resultA, resultB);
                           } else {
                             Navigator.push(
                               context,
@@ -403,7 +632,7 @@ class _OrderScreenState extends State<OrderScreen> {
                             color: Colors.white,
                           ),
                         ),
-                        onSelected: (value) {
+                         onSelected: (value) {
                           if (value == "customers") {
                             Navigator.push(
                               context,
@@ -425,9 +654,17 @@ class _OrderScreenState extends State<OrderScreen> {
                                 builder: (_) => const SettingsScreen(),
                               ),
                             );
+                          } else if (value == "account") {
+                            _showAccountDialog(context);
                           }
                         },
                         itemBuilder: (_) => [
+                          _menuItem(
+                            value: "account",
+                            icon: Icons.account_circle_outlined,
+                            label: "Tài khoản",
+                            color: Colors.indigo,
+                          ),
                           _menuItem(
                             value: "customers",
                             icon: Icons.people_alt_outlined,

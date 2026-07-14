@@ -22,6 +22,22 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
   final searchController = TextEditingController();
 
   List<Customer> customers = [];
+  String sortBy = "newest";
+
+  String _getSortLabel(String key) {
+    switch (key) {
+      case "newest":
+        return "Mới thêm";
+      case "name_az":
+        return "Tên A-Z";
+      case "tickets_desc":
+        return "Nhiều vé nhất";
+      case "last_played":
+        return "Vừa chơi";
+      default:
+        return "Sắp xếp";
+    }
+  }
 
   @override
   void initState() {
@@ -37,11 +53,33 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
 
   List<Customer> _filteredCustomers() {
     final keyword = searchController.text.trim().toLowerCase();
-    if (keyword.isEmpty) return customers;
-    return customers.where((c) {
-      return c.name.toLowerCase().contains(keyword) ||
-          c.phone.toLowerCase().contains(keyword);
-    }).toList();
+    List<Customer> result;
+    if (keyword.isEmpty) {
+      result = List.from(customers);
+    } else {
+      result = customers.where((c) {
+        return c.name.toLowerCase().contains(keyword) ||
+            c.phone.toLowerCase().contains(keyword);
+      }).toList();
+    }
+
+    if (sortBy == "newest") {
+      result.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    } else if (sortBy == "name_az") {
+      result.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    } else if (sortBy == "tickets_desc") {
+      result.sort((a, b) => _ticketCount(b).compareTo(_ticketCount(a)));
+    } else if (sortBy == "last_played") {
+      result.sort((a, b) {
+        final dateA = _lastPlayed(a);
+        final dateB = _lastPlayed(b);
+        if (dateA == null && dateB == null) return 0;
+        if (dateA == null) return 1;
+        if (dateB == null) return -1;
+        return dateB.compareTo(dateA);
+      });
+    }
+    return result;
   }
 
   DateTime? _lastPlayed(Customer customer) {
@@ -412,6 +450,51 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                     fontWeight: FontWeight.bold,
                     color: colorScheme.primary,
                     fontSize: 14,
+                  ),
+                ),
+                const Spacer(),
+                PopupMenuButton<String>(
+                  initialValue: sortBy,
+                  onSelected: (value) {
+                    setState(() {
+                      sortBy = value;
+                    });
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: "newest",
+                      child: Text("Mới thêm gần đây"),
+                    ),
+                    const PopupMenuItem(
+                      value: "name_az",
+                      child: Text("Tên A-Z"),
+                    ),
+                    const PopupMenuItem(
+                      value: "tickets_desc",
+                      child: Text("Số vé giảm dần"),
+                    ),
+                    const PopupMenuItem(
+                      value: "last_played",
+                      child: Text("Giao dịch mới nhất"),
+                    ),
+                  ],
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.sort_rounded, size: 18, color: colorScheme.primary),
+                        const SizedBox(width: 4),
+                        Text(
+                          _getSortLabel(sortBy),
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: colorScheme.primary,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],

@@ -50,21 +50,28 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
   }) {
     final colorScheme = Theme.of(context).colorScheme;
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Icon(icon, color: colorScheme.primary, size: 22),
         const SizedBox(height: 6),
         Text(
           label,
           style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+          textAlign: TextAlign.center,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
         ),
         const SizedBox(height: 4),
         Text(
           value,
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            fontSize: 15,
+            fontSize: 13,
             color: colorScheme.onSurface,
           ),
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
       ],
     );
@@ -213,25 +220,30 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                   ),
                   const Divider(height: 24),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _buildStatItem(
-                        context,
-                        icon: Icons.confirmation_number_outlined,
-                        label: "Tổng số Mã",
-                        value: "${orders.length}",
+                      Expanded(
+                        child: _buildStatItem(
+                          context,
+                          icon: Icons.confirmation_number_outlined,
+                          label: "Tổng số Mã",
+                          value: "${orders.length}",
+                        ),
                       ),
-                      _buildStatItem(
-                        context,
-                        icon: Icons.payments_outlined,
-                        label: "Doanh số Loại A",
-                        value: formatCurrency(totalAmountA),
+                      Expanded(
+                        child: _buildStatItem(
+                          context,
+                          icon: Icons.payments_outlined,
+                          label: "Doanh số Loại A",
+                          value: formatCurrency(totalAmountA),
+                        ),
                       ),
-                      _buildStatItem(
-                        context,
-                        icon: Icons.stars_outlined,
-                        label: "Tổng điểm B",
-                        value: "$totalPointsB điểm",
+                      Expanded(
+                        child: _buildStatItem(
+                          context,
+                          icon: Icons.stars_outlined,
+                          label: "Tổng điểm B",
+                          value: "$totalPointsB điểm",
+                        ),
                       ),
                     ],
                   ),
@@ -288,18 +300,19 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                 Expanded(
                   flex: 2,
                   child: DropdownButtonFormField<String>(
+                    isExpanded: true,
                     initialValue: selectedDate,
                     decoration: InputDecoration(
                       labelText: "Lọc theo ngày",
                       labelStyle: TextStyle(
-                        fontSize: 12,
+                        fontSize: 11,
                         color: colorScheme.onSurfaceVariant,
                       ),
                       filled: true,
                       fillColor: colorScheme.surface,
                       contentPadding: const EdgeInsets.symmetric(
                         vertical: 8,
-                        horizontal: 10,
+                        horizontal: 6,
                       ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
