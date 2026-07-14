@@ -55,6 +55,13 @@ class WinnerGroup {
   bool get isPaid => tickets.every((e) => e.paid);
 }
 
+class WinningBItem {
+  String number;
+  double multiplier;
+
+  WinningBItem({required this.number, required this.multiplier});
+}
+
 class _WinningScreenState extends State<WinningScreen> {
   final winningController = TextEditingController();
 
@@ -67,6 +74,8 @@ class _WinningScreenState extends State<WinningScreen> {
 
   String selectedType = "A";
   List<WinningTicket> winners = [];
+
+  List<WinningBItem> winningBItems = [WinningBItem(number: "", multiplier: 1)];
 
   /// ==== FILTER (chỉ ảnh hưởng hiển thị, không đụng dữ liệu) ====
   final searchController = TextEditingController();
@@ -93,6 +102,27 @@ class _WinningScreenState extends State<WinningScreen> {
     }).toList();
   }
 
+  void loadWinningB() {
+    final today = DateUtil.today();
+
+    final result = winningResultRepo.getResult(today, "B");
+
+    if (result == null) return;
+
+    final values = result.winningNumbers
+        .split(",")
+        .where((e) => e.trim().isNotEmpty);
+
+    winningBItems = values.map((e) {
+      final parts = e.split(":");
+
+      return WinningBItem(
+        number: parts[0],
+        multiplier: parts.length > 1 ? double.tryParse(parts[1]) ?? 1 : 1,
+      );
+    }).toList();
+  }
+
   Future<void> findWinner() async {
     bool isValidNumber(String value) {
       return RegExp(r'^\d{2}$').hasMatch(value);
@@ -100,8 +130,9 @@ class _WinningScreenState extends State<WinningScreen> {
 
     final input = winningController.text.trim();
 
-    if (input.isEmpty) return;
-
+    if (selectedType == "A" && input.isEmpty) {
+      return;
+    }
     final today = DateUtil.today();
 
     final orders = orderRepo.getByBusinessDate(today);
@@ -150,45 +181,56 @@ class _WinningScreenState extends State<WinningScreen> {
         );
       }
     } else {
-      final numbers = input
-          .split(",")
-          .map((e) => e.trim())
-          .where((e) => e.isNotEmpty)
-          .toSet()
+      final items = winningBItems
+          .where((e) => e.number.trim().isNotEmpty)
           .toList();
 
-      if (numbers.isEmpty) {
+      if (items.isEmpty) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text("Phải nhập ít nhất 1 số")));
+        ).showSnackBar(const SnackBar(content: Text("Phải nhập ít nhất 1 mã")));
         return;
       }
 
-      for (final n in numbers) {
-        if (!isValidNumber(n)) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text("Số không hợp lệ: $n")));
+      /// validate
+      for (final item in items) {
+        if (!isValidNumber(item.number)) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Số không hợp lệ: ${item.number}")),
+          );
+          return;
+        }
+
+        if (item.multiplier <= 0) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Hệ số không hợp lệ cho mã ${item.number}")),
+          );
           return;
         }
       }
+
+      /// lưu kết quả
       await winningResultRepo.saveOrUpdate(
         businessDate: today,
         ticketType: "B",
-        winningNumbers: numbers.join(","),
+        winningNumbers: items
+            .map((e) => "${e.number}:${e.multiplier}")
+            .join(","),
       );
-      for (final number in numbers) {
+
+      for (final item in items) {
         final existed = winningRepo
             .getByDate(today)
-            .any((e) => e.ticketType == "B" && e.winningNumber == number);
+            .any((e) => e.ticketType == "B" && e.winningNumber == item.number);
 
         if (existed) continue;
+
         final matched = orders.where(
-          (o) => o.type == "B" && o.productCode == number,
+          (o) => o.type == "B" && o.productCode == item.number,
         );
 
         for (final Order order in matched) {
-          final payout = order.unit * config.refundRateB;
+          final payout = order.unit * config.refundRateB * item.multiplier;
 
           final orderValue = order.unit * config.ticketPriceB;
 
@@ -197,8 +239,9 @@ class _WinningScreenState extends State<WinningScreen> {
               ticketId: order.ticketId,
               customerId: order.customerId,
               businessDate: today,
-              winningNumber: number,
+              winningNumber: item.number,
               ticketType: "B",
+              multiplier: item.multiplier,
               orderValue: orderValue,
               payoutAmount: payout,
             ),
@@ -225,6 +268,7 @@ class _WinningScreenState extends State<WinningScreen> {
     if (result != null) {
       winningController.text = result.winningNumbers;
     }
+    loadWinningB();
   }
 
   @override
@@ -254,8 +298,7 @@ class _WinningScreenState extends State<WinningScreen> {
     }).toList();
 
     final isLocked =
-        selectedType == "A" &&
-        winningResultRepo.getResult(DateUtil.today(), "A") != null;
+        winningResultRepo.getResult(DateUtil.today(), selectedType) != null;
 
     return Scaffold(
       backgroundColor: colorScheme.surfaceContainerLowest,
@@ -390,6 +433,7 @@ class _WinningScreenState extends State<WinningScreen> {
                                 );
                                 winningController.text =
                                     result?.winningNumbers ?? "";
+                                loadWinningB();
                               });
                             },
                           ),
@@ -400,31 +444,100 @@ class _WinningScreenState extends State<WinningScreen> {
 
                   const SizedBox(height: 12),
 
-                  TextField(
-                    controller: winningController,
-                    enabled: !isLocked,
-                    decoration: InputDecoration(
-                      isDense: true,
-                      labelText: selectedType == "A"
-                          ? "Mã sinh lời (00-99)"
-                          : "Nhập nhiều số, cách nhau dấu phẩy: 12,34,56",
-                      prefixIcon: Icon(
-                        Icons.confirmation_number_outlined,
-                        color: selectedType == "A"
-                            ? Colors.indigo
-                            : Colors.teal,
-                        size: 20,
-                      ),
-                      filled: true,
-                      fillColor: isLocked
-                          ? Colors.grey[100]
-                          : colorScheme.surfaceContainerLowest,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
+                  selectedType == "A"
+                      ? TextField(
+                          controller: winningController,
+                          enabled: !isLocked,
+                          decoration: InputDecoration(
+                            isDense: true,
+                            labelText: selectedType == "A"
+                                ? "Mã sinh lời (00-99)"
+                                : "Nhập nhiều số, cách nhau dấu phẩy: 12,34,56",
+                            prefixIcon: Icon(
+                              Icons.confirmation_number_outlined,
+                              color: selectedType == "A"
+                                  ? Colors.indigo
+                                  : Colors.teal,
+                              size: 20,
+                            ),
+                            filled: true,
+                            fillColor: isLocked
+                                ? Colors.grey[100]
+                                : colorScheme.surfaceContainerLowest,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        )
+                      : Column(
+                          children: [
+                            ...winningBItems.asMap().entries.map((entry) {
+                              final index = entry.key;
+                              final item = entry.value;
 
+                              return Row(
+                                children: [
+                                  Expanded(
+                                    flex: 2,
+                                    child: TextFormField(
+                                      enabled: !isLocked,
+
+                                      initialValue: item.number,
+                                      decoration: const InputDecoration(
+                                        labelText: "Mã",
+                                      ),
+                                      onChanged: (v) {
+                                        item.number = v;
+                                      },
+                                    ),
+                                  ),
+
+                                  const SizedBox(width: 8),
+
+                                  Expanded(
+                                    child: TextFormField(
+                                      enabled: !isLocked,
+
+                                      initialValue: item.multiplier.toString(),
+                                      keyboardType:
+                                          TextInputType.numberWithOptions(
+                                            decimal: true,
+                                          ),
+                                      decoration: const InputDecoration(
+                                        labelText: "Hệ số",
+                                      ),
+                                      onChanged: (v) {
+                                        item.multiplier =
+                                            double.tryParse(v) ?? 1;
+                                      },
+                                    ),
+                                  ),
+                                  if (!isLocked)
+                                    IconButton(
+                                      onPressed: () {
+                                        setState(() {
+                                          winningBItems.removeAt(index);
+                                        });
+                                      },
+                                      icon: const Icon(Icons.delete),
+                                    ),
+                                ],
+                              );
+                            }),
+                            if (!isLocked)
+                              ElevatedButton.icon(
+                                onPressed: () {
+                                  setState(() {
+                                    winningBItems.add(
+                                      WinningBItem(number: "", multiplier: 1),
+                                    );
+                                  });
+                                },
+                                icon: const Icon(Icons.add),
+                                label: const Text("Thêm mã"),
+                              ),
+                          ],
+                        ),
                   if (isLocked) ...[
                     const SizedBox(height: 8),
                     Row(
@@ -1107,9 +1220,8 @@ class _WinnerGroupCardState extends State<_WinnerGroupCard> {
                   borderRadius: BorderRadius.circular(12),
                   child: Image.memory(
                     group.tickets.first.proofImageBytes!,
-                    height: 180,
                     width: double.infinity,
-                    fit: BoxFit.cover,
+                    fit: BoxFit.contain,
                   ),
                 ),
 

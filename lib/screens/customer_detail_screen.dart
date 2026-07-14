@@ -533,9 +533,8 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                                             ),
                                             child: Image.memory(
                                               winning.proofImageBytes!,
-                                              height: 180,
                                               width: double.infinity,
-                                              fit: BoxFit.cover,
+                                              fit: BoxFit.contain,
                                             ),
                                           ),
                                         )

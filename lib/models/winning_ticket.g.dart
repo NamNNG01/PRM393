@@ -29,13 +29,14 @@ class WinningTicketAdapter extends TypeAdapter<WinningTicket> {
       proofImageBytes: fields[6] as Uint8List?,
       proofFile: fields[8] as String?,
       note: fields[7] as String?,
+      multiplier: fields[12] as double,
     );
   }
 
   @override
   void write(BinaryWriter writer, WinningTicket obj) {
     writer
-      ..writeByte(12)
+      ..writeByte(13)
       ..writeByte(0)
       ..write(obj.ticketId)
       ..writeByte(1)
@@ -59,7 +60,9 @@ class WinningTicketAdapter extends TypeAdapter<WinningTicket> {
       ..writeByte(10)
       ..write(obj.orderValue)
       ..writeByte(11)
-      ..write(obj.payoutAmount);
+      ..write(obj.payoutAmount)
+      ..writeByte(12)
+      ..write(obj.multiplier);
   }
 
   @override

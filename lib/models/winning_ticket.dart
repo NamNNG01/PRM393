@@ -40,6 +40,8 @@ class WinningTicket extends HiveObject {
 
   @HiveField(11)
   double payoutAmount;
+  @HiveField(12)
+  double multiplier;
 
   WinningTicket({
     required this.ticketId,
@@ -54,5 +56,6 @@ class WinningTicket extends HiveObject {
     this.proofImageBytes,
     this.proofFile,
     this.note,
+    this.multiplier = 1,
   });
 }
