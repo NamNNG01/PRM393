@@ -22,6 +22,22 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
   final searchController = TextEditingController();
 
   List<Customer> customers = [];
+  String sortBy = "newest";
+
+  String _getSortLabel(String key) {
+    switch (key) {
+      case "newest":
+        return "Mới thêm";
+      case "name_az":
+        return "Tên A-Z";
+      case "tickets_desc":
+        return "Nhiều vé nhất";
+      case "last_played":
+        return "Vừa chơi";
+      default:
+        return "Sắp xếp";
+    }
+  }
 
   @override
   void initState() {
@@ -37,11 +53,33 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
 
   List<Customer> _filteredCustomers() {
     final keyword = searchController.text.trim().toLowerCase();
-    if (keyword.isEmpty) return customers;
-    return customers.where((c) {
-      return c.name.toLowerCase().contains(keyword) ||
-          c.phone.toLowerCase().contains(keyword);
-    }).toList();
+    List<Customer> result;
+    if (keyword.isEmpty) {
+      result = List.from(customers);
+    } else {
+      result = customers.where((c) {
+        return c.name.toLowerCase().contains(keyword) ||
+            c.phone.toLowerCase().contains(keyword);
+      }).toList();
+    }
+
+    if (sortBy == "newest") {
+      result.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    } else if (sortBy == "name_az") {
+      result.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    } else if (sortBy == "tickets_desc") {
+      result.sort((a, b) => _ticketCount(b).compareTo(_ticketCount(a)));
+    } else if (sortBy == "last_played") {
+      result.sort((a, b) {
+        final dateA = _lastPlayed(a);
+        final dateB = _lastPlayed(b);
+        if (dateA == null && dateB == null) return 0;
+        if (dateA == null) return 1;
+        if (dateB == null) return -1;
+        return dateB.compareTo(dateA);
+      });
+    }
+    return result;
   }
 
   DateTime? _lastPlayed(Customer customer) {
@@ -100,15 +138,23 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                   textCapitalization: TextCapitalization.words,
                   decoration: InputDecoration(
                     labelText: 'Tên khách hàng *',
-                    prefixIcon: Icon(Icons.person_outline, color: colorScheme.primary),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    prefixIcon: Icon(
+                      Icons.person_outline,
+                      color: colorScheme.primary,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide(color: colorScheme.outlineVariant),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                      borderSide: BorderSide(
+                        color: colorScheme.primary,
+                        width: 2,
+                      ),
                     ),
                     errorBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -116,7 +162,10 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                     ),
                     focusedErrorBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: colorScheme.error, width: 2),
+                      borderSide: BorderSide(
+                        color: colorScheme.error,
+                        width: 2,
+                      ),
                     ),
                   ),
                   validator: (v) {
@@ -133,15 +182,23 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                   keyboardType: TextInputType.phone,
                   decoration: InputDecoration(
                     labelText: 'Số điện thoại',
-                    prefixIcon: Icon(Icons.phone_outlined, color: colorScheme.primary),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    prefixIcon: Icon(
+                      Icons.phone_outlined,
+                      color: colorScheme.primary,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide(color: colorScheme.outlineVariant),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                      borderSide: BorderSide(
+                        color: colorScheme.primary,
+                        width: 2,
+                      ),
                     ),
                     errorBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -149,7 +206,10 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                     ),
                     focusedErrorBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: colorScheme.error, width: 2),
+                      borderSide: BorderSide(
+                        color: colorScheme.error,
+                        width: 2,
+                      ),
                     ),
                   ),
                   validator: (v) {
@@ -170,15 +230,23 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                   maxLines: 2,
                   decoration: InputDecoration(
                     labelText: 'Ghi chú',
-                    prefixIcon: Icon(Icons.notes_outlined, color: colorScheme.primary),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    prefixIcon: Icon(
+                      Icons.notes_outlined,
+                      color: colorScheme.primary,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide(color: colorScheme.outlineVariant),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                      borderSide: BorderSide(
+                        color: colorScheme.primary,
+                        width: 2,
+                      ),
                     ),
                   ),
                 ),
@@ -192,7 +260,10 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
             child: const Text('Hủy'),
           ),
           FilledButton.icon(
-            icon: Icon(isEdit ? Icons.save_rounded : Icons.add_rounded, size: 18),
+            icon: Icon(
+              isEdit ? Icons.save_rounded : Icons.add_rounded,
+              size: 18,
+            ),
             label: Text(isEdit ? 'Lưu' : 'Thêm'),
             onPressed: () async {
               if (!formKey.currentState!.validate()) return;
@@ -238,7 +309,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
         ),
         content: Text(
           'Bạn có chắc muốn xóa khách hàng "${customer.name}" không?\n'
-          'Dữ liệu đơn hàng liên quan sẽ vẫn được giữ lại.',
+          'Dữ liệu mã liên quan sẽ vẫn được giữ lại.',
         ),
         actions: [
           TextButton(
@@ -321,7 +392,10 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openCustomerDialog(),
         icon: const Icon(Icons.person_add_alt_1_rounded),
-        label: const Text('Thêm khách', style: TextStyle(fontWeight: FontWeight.bold)),
+        label: const Text(
+          'Thêm khách',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
       body: Column(
         children: [
@@ -357,11 +431,18 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
             child: Row(
               children: [
-                Icon(Icons.people_alt_outlined, size: 18, color: colorScheme.primary),
+                Icon(
+                  Icons.people_alt_outlined,
+                  size: 18,
+                  color: colorScheme.primary,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   "Tổng số khách: ",
-                  style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 14),
+                  style: TextStyle(
+                    color: colorScheme.onSurfaceVariant,
+                    fontSize: 14,
+                  ),
                 ),
                 Text(
                   "${filtered.length}",
@@ -369,6 +450,51 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                     fontWeight: FontWeight.bold,
                     color: colorScheme.primary,
                     fontSize: 14,
+                  ),
+                ),
+                const Spacer(),
+                PopupMenuButton<String>(
+                  initialValue: sortBy,
+                  onSelected: (value) {
+                    setState(() {
+                      sortBy = value;
+                    });
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: "newest",
+                      child: Text("Mới thêm gần đây"),
+                    ),
+                    const PopupMenuItem(
+                      value: "name_az",
+                      child: Text("Tên A-Z"),
+                    ),
+                    const PopupMenuItem(
+                      value: "tickets_desc",
+                      child: Text("Số vé giảm dần"),
+                    ),
+                    const PopupMenuItem(
+                      value: "last_played",
+                      child: Text("Giao dịch mới nhất"),
+                    ),
+                  ],
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.sort_rounded, size: 18, color: colorScheme.primary),
+                        const SizedBox(width: 4),
+                        Text(
+                          _getSortLabel(sortBy),
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: colorScheme.primary,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -382,11 +508,18 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.person_search_outlined, size: 64, color: colorScheme.outline),
+                        Icon(
+                          Icons.person_search_outlined,
+                          size: 64,
+                          color: colorScheme.outline,
+                        ),
                         const SizedBox(height: 12),
                         Text(
                           "Không tìm thấy khách hàng nào",
-                          style: TextStyle(color: colorScheme.outline, fontSize: 16),
+                          style: TextStyle(
+                            color: colorScheme.outline,
+                            fontSize: 16,
+                          ),
                         ),
                         const SizedBox(height: 16),
                         FilledButton.icon(
@@ -407,10 +540,16 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
 
                       return Card(
                         elevation: 0,
-                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 6,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
-                          side: BorderSide(color: colorScheme.outlineVariant, width: 1),
+                          side: BorderSide(
+                            color: colorScheme.outlineVariant,
+                            width: 1,
+                          ),
                         ),
                         color: colorScheme.surface,
                         child: InkWell(
@@ -419,7 +558,8 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => CustomerDetailScreen(customer: customer),
+                                builder: (_) =>
+                                    CustomerDetailScreen(customer: customer),
                               ),
                             ).then((_) => _reloadCustomers());
                           },
@@ -446,7 +586,8 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                                 // Info
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         customer.name,
@@ -462,13 +603,17 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                                           Icon(
                                             Icons.phone_outlined,
                                             size: 13,
-                                            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                                            color: colorScheme.onSurfaceVariant
+                                                .withValues(alpha: 0.7),
                                           ),
                                           const SizedBox(width: 4),
                                           Text(
-                                            customer.phone.isEmpty ? 'Chưa có SĐT' : customer.phone,
+                                            customer.phone.isEmpty
+                                                ? 'Chưa có SĐT'
+                                                : customer.phone,
                                             style: TextStyle(
-                                              color: colorScheme.onSurfaceVariant,
+                                              color:
+                                                  colorScheme.onSurfaceVariant,
                                               fontSize: 13,
                                             ),
                                           ),
@@ -481,14 +626,17 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                                             Icon(
                                               Icons.notes_outlined,
                                               size: 13,
-                                              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                                              color: colorScheme
+                                                  .onSurfaceVariant
+                                                  .withValues(alpha: 0.7),
                                             ),
                                             const SizedBox(width: 4),
                                             Expanded(
                                               child: Text(
                                                 customer.note,
                                                 style: TextStyle(
-                                                  color: colorScheme.onSurfaceVariant,
+                                                  color: colorScheme
+                                                      .onSurfaceVariant,
                                                   fontSize: 12,
                                                   fontStyle: FontStyle.italic,
                                                 ),
@@ -503,13 +651,18 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                                       Row(
                                         children: [
                                           Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 2,
+                                            ),
                                             decoration: BoxDecoration(
-                                              color: colorScheme.primary.withValues(alpha: 0.1),
-                                              borderRadius: BorderRadius.circular(6),
+                                              color: colorScheme.primary
+                                                  .withValues(alpha: 0.1),
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
                                             ),
                                             child: Text(
-                                              "$ticketCount vé",
+                                              "$ticketCount Mã",
                                               style: TextStyle(
                                                 color: colorScheme.primary,
                                                 fontSize: 11,
@@ -524,7 +677,9 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                                                   ? "Chưa giao dịch"
                                                   : "Lần cuối: ${_formatDate(lastDate)}",
                                               style: TextStyle(
-                                                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                                                color: colorScheme
+                                                    .onSurfaceVariant
+                                                    .withValues(alpha: 0.8),
                                                 fontSize: 12,
                                               ),
                                               overflow: TextOverflow.ellipsis,
@@ -546,7 +701,9 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                                         color: colorScheme.primary,
                                       ),
                                       tooltip: 'Sửa',
-                                      onPressed: () => _openCustomerDialog(existing: customer),
+                                      onPressed: () => _openCustomerDialog(
+                                        existing: customer,
+                                      ),
                                     ),
                                     IconButton(
                                       icon: Icon(
@@ -555,7 +712,8 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                                         color: colorScheme.error,
                                       ),
                                       tooltip: 'Xóa',
-                                      onPressed: () => _deleteCustomer(customer),
+                                      onPressed: () =>
+                                          _deleteCustomer(customer),
                                     ),
                                   ],
                                 ),

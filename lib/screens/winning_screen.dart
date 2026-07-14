@@ -119,7 +119,7 @@ class _WinningScreenState extends State<WinningScreen> {
 
       if (!isValidNumber(number)) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Số trúng phải từ 00 đến 99")),
+          const SnackBar(content: Text("Mã sinh lời phải từ 00 đến 99")),
         );
         return;
       }
@@ -172,7 +172,11 @@ class _WinningScreenState extends State<WinningScreen> {
           return;
         }
       }
-      await winningResultRepo.addNumbers(businessDate: today, numbers: numbers);
+      await winningResultRepo.saveOrUpdate(
+        businessDate: today,
+        ticketType: "B",
+        winningNumbers: numbers.join(","),
+      );
       for (final number in numbers) {
         final existed = winningRepo
             .getByDate(today)
@@ -250,7 +254,8 @@ class _WinningScreenState extends State<WinningScreen> {
     }).toList();
 
     final isLocked =
-        winningResultRepo.getResult(DateUtil.today(), selectedType) != null;
+        selectedType == "A" &&
+        winningResultRepo.getResult(DateUtil.today(), "A") != null;
 
     return Scaffold(
       backgroundColor: colorScheme.surfaceContainerLowest,
@@ -280,7 +285,7 @@ class _WinningScreenState extends State<WinningScreen> {
                   alignment: Alignment.center,
                   children: [
                     Text(
-                      "Xác nhận vé trúng",
+                      "Xác nhận Mã sinh lời",
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
@@ -333,7 +338,7 @@ class _WinningScreenState extends State<WinningScreen> {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        "Nhập kết quả xổ số hôm nay",
+                        "Nhập mã sinh lời hôm nay",
                         style: TextStyle(
                           fontWeight: FontWeight.w700,
                           color: colorScheme.primary,
@@ -343,7 +348,7 @@ class _WinningScreenState extends State<WinningScreen> {
                   ),
                   const SizedBox(height: 12),
 
-                  /// Chọn loại vé dạng segmented
+                  /// Chọn loại Mã dạng segmented
                   Container(
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
@@ -401,7 +406,7 @@ class _WinningScreenState extends State<WinningScreen> {
                     decoration: InputDecoration(
                       isDense: true,
                       labelText: selectedType == "A"
-                          ? "Số trúng (00-99)"
+                          ? "Mã sinh lời (00-99)"
                           : "Nhập nhiều số, cách nhau dấu phẩy: 12,34,56",
                       prefixIcon: Icon(
                         Icons.confirmation_number_outlined,
@@ -424,11 +429,18 @@ class _WinningScreenState extends State<WinningScreen> {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        Icon(Icons.lock_outline, size: 14, color: Colors.grey[600]),
+                        Icon(
+                          Icons.lock_outline,
+                          size: 14,
+                          color: Colors.grey[600],
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           "Loại $selectedType đã được xác nhận hôm nay",
-                          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
                         ),
                       ],
                     ),
@@ -458,7 +470,7 @@ class _WinningScreenState extends State<WinningScreen> {
             ),
           ),
 
-          /// ==== KHU VỰC FILTER DANH SÁCH NGƯỜI TRÚNG ====
+          /// ==== KHU VỰC FILTER DANH SÁCH NGƯỜI sinh lời ====
           Padding(
             padding: const EdgeInsets.fromLTRB(14, 4, 14, 8),
             child: Column(
@@ -545,7 +557,7 @@ class _WinningScreenState extends State<WinningScreen> {
                         const SizedBox(height: 12),
                         Text(
                           allGroups.isEmpty
-                              ? "Chưa có vé trúng"
+                              ? "Chưa có Mã sinh lời"
                               : "Không tìm thấy kết quả phù hợp",
                           style: TextStyle(color: Colors.grey[600]),
                         ),
@@ -737,9 +749,7 @@ class _WinnerGroupCardState extends State<_WinnerGroupCard> {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -818,7 +828,9 @@ class _WinnerGroupCardState extends State<_WinnerGroupCard> {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: isPaid ? Colors.green[700] : Colors.orange[800],
+                          color: isPaid
+                              ? Colors.green[700]
+                              : Colors.orange[800],
                         ),
                       ),
                     ],
@@ -852,7 +864,7 @@ class _WinnerGroupCardState extends State<_WinnerGroupCard> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: _statBox(
-                    "Tổng vé",
+                    "Tổng Mã",
                     "${group.tickets.length}",
                     Icons.receipt_long_outlined,
                     colorScheme.primary,
@@ -908,7 +920,7 @@ class _WinnerGroupCardState extends State<_WinnerGroupCard> {
             const SizedBox(height: 16),
 
             Text(
-              "Danh sách mã trúng",
+              "Danh sách mã sinh lời",
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: colorScheme.onSurface,
@@ -918,7 +930,9 @@ class _WinnerGroupCardState extends State<_WinnerGroupCard> {
             const SizedBox(height: 8),
 
             ...group.tickets.map((t) {
-              final typeColor = t.ticketType == "A" ? Colors.indigo : Colors.teal;
+              final typeColor = t.ticketType == "A"
+                  ? Colors.indigo
+                  : Colors.teal;
 
               return Container(
                 margin: const EdgeInsets.only(bottom: 6),
@@ -1020,13 +1034,15 @@ class _WinnerGroupCardState extends State<_WinnerGroupCard> {
               if (imageBytes != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 12),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.memory(
-                      imageBytes!,
-                      height: 180,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
+                  child: Center(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        width: 220,
+                        height: 220,
+                        color: Colors.grey.shade200,
+                        child: Image.memory(imageBytes!, fit: BoxFit.contain),
+                      ),
                     ),
                   ),
                 ),
@@ -1141,10 +1157,7 @@ class _WinnerGroupCardState extends State<_WinnerGroupCard> {
             ),
           ),
           const SizedBox(height: 2),
-          Text(
-            title,
-            style: TextStyle(fontSize: 11, color: Colors.grey[600]),
-          ),
+          Text(title, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
         ],
       ),
     );

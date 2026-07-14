@@ -490,7 +490,7 @@ class _OrderScreenState extends State<OrderScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              "Đơn hàng",
+                              "Mã",
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               textAlign: TextAlign.center,
@@ -674,7 +674,7 @@ class _OrderScreenState extends State<OrderScreen> {
                           _menuItem(
                             value: "winning",
                             icon: Icons.emoji_events_outlined,
-                            label: "Vé trúng",
+                            label: "Mã sinh lời",
                             color: Colors.amber[800]!,
                           ),
                           _menuItem(
@@ -732,14 +732,14 @@ class _OrderScreenState extends State<OrderScreen> {
                         ),
                         const SizedBox(height: 24),
                         Text(
-                          "Chưa có đơn hàng nào",
+                          "Chưa có mã nào",
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.titleLarge
                               ?.copyWith(fontWeight: FontWeight.w700),
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          "Bắt đầu bằng cách nhập danh sách đơn hàng loại A hoặc B",
+                          "Bắt đầu bằng cách nhập danh sách mã loại A hoặc B",
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 14,
@@ -759,7 +759,7 @@ class _OrderScreenState extends State<OrderScreen> {
                               );
                             },
                             icon: const Icon(Icons.add),
-                            label: const Text("Nhập đơn hàng"),
+                            label: const Text("Nhập mã"),
                             style: ElevatedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 20,
@@ -817,7 +817,7 @@ class _OrderScreenState extends State<OrderScreen> {
                       children: [
                         Expanded(
                           child: _StatCard(
-                            label: "Tổng đơn hàng",
+                            label: "Tổng số mã",
                             value: "${orders.length}",
                             icon: Icons.receipt_long_outlined,
                             color: colorScheme.primary,
@@ -1426,8 +1426,7 @@ class _DetailTabState extends State<_DetailTab> {
                             const SizedBox(width: 12),
                             Expanded(
                               child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     "Mã ${order.productCode}",

@@ -159,7 +159,7 @@ class SettlementReportScreen extends StatelessWidget {
 
                 // Section 1: Thông tin chung
                 _sectionHeader("Thông tin chung"),
-                _row("Loại vé", "Vé Loại $type"),
+                _row("Loại Mã", "Mã Loại $type"),
                 _row("Mã sản phẩm", result["productCode"].toString()),
                 if (type == "B")
                   _row("Hệ số bồi hoàn", result["multiplier"].toString()),
