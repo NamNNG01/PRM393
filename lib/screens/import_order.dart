@@ -106,6 +106,82 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
     return result;
   }
 
+  Widget _buildDynamicExampleBox(ColorScheme colorScheme) {
+    String title = "";
+    String content = "";
+
+    if (selectedType == "A") {
+      if (_amountUnit == 1.0) {
+        title = "Định dạng nhập Loại A: [mã] x [số tiền] (Đơn vị: Nghìn đồng)";
+        content = "• Mã phải từ 00 đến 99.\n"
+            "• Quy ước nhập tiền:\n"
+            "  - 10 = 10.000 VNĐ\n"
+            "  - 100 = 100.000 VNĐ\n"
+            "  - 1000 = 1.000.000 VNĐ\n\n"
+            "Ví dụ hợp lệ:\n"
+            "90 x 10 (Mã 90, số tiền 10.000 VNĐ)\n"
+            "23 x 100 (Mã 23, số tiền 100.000 VNĐ)\n\n"
+            "Ví dụ không hợp lệ:\n"
+            "100 x 50 (Mã > 99)\n"
+            "abc x 10 (Mã không phải số)";
+      } else {
+        title = "Định dạng nhập Loại A: [mã] x [số tiền] (Đơn vị: Đồng)";
+        content = "• Mã phải từ 00 đến 99.\n"
+            "• Quy ước nhập tiền:\n"
+            "  - 10000 = 10.000 VNĐ\n"
+            "  - 100000 = 100.000 VNĐ\n"
+            "  - Tối thiểu phải từ 1.000 VNĐ trở lên.\n\n"
+            "Ví dụ hợp lệ:\n"
+            "90 x 10000 (Mã 90, số tiền 10.000 VNĐ)\n"
+            "23 x 100000 (Mã 23, số tiền 100.000 VNĐ)\n\n"
+            "Ví dụ không hợp lệ:\n"
+            "90 x 500 (Số tiền dưới 1.000 VNĐ)\n"
+            "100 x 10000 (Mã > 99)";
+      }
+    } else {
+      title = "Định dạng nhập Loại B: [mã] x [điểm] (Đơn vị: Điểm)";
+      content = "• Mã phải từ 00 đến 99.\n"
+          "• Nhập số điểm trực tiếp:\n"
+          "  - 10 = 10 điểm\n"
+          "  - 100 = 100 điểm\n\n"
+          "Ví dụ hợp lệ:\n"
+          "90 x 10 (Mã 90, 10 điểm)\n"
+          "23 x 100 (Mã 23, 100 điểm)\n\n"
+          "Ví dụ không hợp lệ:\n"
+          "100 x 5 (Mã > 99)\n"
+          "90 x -5 (Điểm không hợp lệ)";
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colorScheme.primaryContainer.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colorScheme.primary.withValues(alpha: 0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            content,
+            style: TextStyle(
+              fontFamily: 'monospace',
+              fontSize: 12,
+              color: colorScheme.onSurfaceVariant,
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -513,51 +589,7 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                     ),
                     if (showExample) ...[
                       const SizedBox(height: 8),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: colorScheme.primaryContainer.withValues(
-                            alpha: 0.15,
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: colorScheme.primary.withValues(alpha: 0.25),
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              "Định dạng nhập: [mã] x [số tiền hoặc điểm]",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              "• Mã phải từ 00 đến 99.\n"
-                              "• Quy ước nhập tiền (Loại A):\n"
-                              "  - 10 = 10.000 VNĐ\n"
-                              "  - 100 = 100.000 VNĐ\n"
-                              "  - 1000 = 1.000.000 VNĐ\n\n"
-                              "Ví dụ hợp lệ:\n"
-                              "90 x 10 (Mã 90, số tiền 10.000 VNĐ)\n"
-                              "23 x 100 (Mã 23, số tiền 100.000 VNĐ)\n\n"
-                              "Ví dụ không hợp lệ:\n"
-                              "100 x 50 (Lỗi vì Mã > 99)\n"
-                              "abc x 10 (Lỗi vì Mã không phải số)",
-                              style: TextStyle(
-                                fontFamily: 'monospace',
-                                fontSize: 12,
-                                color: colorScheme.onSurfaceVariant,
-                                height: 1.5,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      _buildDynamicExampleBox(colorScheme),
                     ],
                     const SizedBox(height: 10),
                     TextField(
@@ -566,8 +598,11 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                       maxLines: 12,
                       textAlignVertical: TextAlignVertical.top,
                       decoration: InputDecoration(
-                        hintText:
-                            "Dán hoặc nhập danh sách mã...\nVí dụ:\n90 x 10\n05 x 100",
+                        hintText: selectedType == "A"
+                            ? (_amountUnit == 1.0
+                                ? "Dán hoặc nhập đơn hàng Loại A (Nghìn đồng)...\nVí dụ:\n90 x 10\n05 x 100"
+                                : "Dán hoặc nhập đơn hàng Loại A (Đồng)...\nVí dụ:\n90 x 10000\n05 x 100000")
+                            : "Dán hoặc nhập đơn hàng Loại B (Điểm)...\nVí dụ:\n90 x 10\n05 x 100",
                         hintStyle: TextStyle(
                           color: colorScheme.onSurfaceVariant.withValues(
                             alpha: 0.5,
@@ -591,8 +626,11 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                         ),
                         filled: true,
                         fillColor: colorScheme.surfaceContainerLowest,
-                        helperText:
-                            "Lưu ý nhập tiền: 10 = 10.000 VNĐ, 100 = 100.000 VNĐ. Phân cách: x, *, -, dấu cách hoặc :",
+                        helperText: selectedType == "A"
+                            ? (_amountUnit == 1.0
+                                ? "Lưu ý nhập tiền: 10 = 10.000 VNĐ, 100 = 100.000 VNĐ. Phân cách: x, *, -, dấu cách hoặc :"
+                                : "Lưu ý nhập tiền: Nhập đúng số tiền đồng (tối thiểu 1000). Ví dụ: 10000 = 10.000 VNĐ.")
+                            : "Lưu ý nhập điểm: Nhập trực tiếp số điểm. Ví dụ: 10 = 10 điểm.",
                         helperMaxLines: 2,
                       ),
                     ),
