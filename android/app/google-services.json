@@ -1,22 +1,22 @@
 {
   "project_info": {
-    "project_number": "256474057725",
-    "firebase_url": "https://bonus4-32bf6-default-rtdb.asia-southeast1.firebasedatabase.app",
-    "project_id": "bonus4-32bf6",
-    "storage_bucket": "bonus4-32bf6.firebasestorage.app"
+    "project_number": "756436909038",
+    "firebase_url": "https://bonus4-6f61a-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "bonus4-6f61a",
+    "storage_bucket": "bonus4-6f61a.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:256474057725:android:da3497797b91a2dc192794",
+        "mobilesdk_app_id": "1:756436909038:android:80d1ada21b5b1cee66ecff",
         "android_client_info": {
-          "package_name": "com.example.firebase_profile_app"
+          "package_name": "com.example.bonus4"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBExUtV0pXXFDLcn1zyMsVwK__of5czo7U"
+          "current_key": "AIzaSyDmldmItVh_9N9QUam43AQApU-VdP5rB_s"
         }
       ],
       "services": {
@@ -27,7 +27,7 @@
     },
     {
       "client_info": {
-        "mobilesdk_app_id": "1:256474057725:android:e832a903632b9968192794",
+        "mobilesdk_app_id": "1:756436909038:android:d9c9f55d6a786d4466ecff",
         "android_client_info": {
           "package_name": "com.example.flutter_application_2"
         }
@@ -35,7 +35,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBExUtV0pXXFDLcn1zyMsVwK__of5czo7U"
+          "current_key": "AIzaSyDmldmItVh_9N9QUam43AQApU-VdP5rB_s"
         }
       ],
       "services": {
