@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../utils/date_util.dart';
+import '../services/export_service.dart';
 
 class SettlementReportScreen extends StatelessWidget {
   final Map<String, dynamic> result;
@@ -75,6 +77,48 @@ class SettlementReportScreen extends StatelessWidget {
                       child: IconButton(
                         icon: const Icon(Icons.arrow_back, color: Colors.white),
                         onPressed: () => Navigator.pop(context),
+                      ),
+                    ),
+                    Positioned(
+                      right: 4,
+                      child: PopupMenuButton<String>(
+                        icon: const Icon(Icons.download_outlined, color: Colors.white),
+                        onSelected: (value) async {
+                          final dateStr = DateUtil.today();
+                          if (value == 'excel') {
+                            await ExportService.exportSettlementToExcel(
+                              result: result,
+                              date: dateStr,
+                            );
+                          } else if (value == 'pdf') {
+                            await ExportService.exportSettlementToPdf(
+                              result: result,
+                              date: dateStr,
+                            );
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          const PopupMenuItem(
+                            value: 'excel',
+                            child: Row(
+                              children: [
+                                Icon(Icons.table_view, color: Colors.green),
+                                SizedBox(width: 8),
+                                Text("Xuất Excel"),
+                              ],
+                            ),
+                          ),
+                          const PopupMenuItem(
+                            value: 'pdf',
+                            child: Row(
+                              children: [
+                                Icon(Icons.picture_as_pdf, color: Colors.red),
+                                SizedBox(width: 8),
+                                Text("Xuất PDF"),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
