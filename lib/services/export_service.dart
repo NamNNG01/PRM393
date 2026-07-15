@@ -1082,7 +1082,7 @@ class ExportService {
       buf.writeln("Chi tiết theo mã (Loại B):");
       for (final key in keysB) {
         final fVal = fB[key] ?? 0;
-        buf.writeln("  $key: ${_formatPoint(fVal)}");
+        buf.writeln("  $key: ${_formatMoney(fVal * 1000)}");
       }
     }
     return buf.toString();
