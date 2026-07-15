@@ -21,4 +21,4 @@ jobs:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_BONUS4_6F61A }}
           channelId: live
-          projectId: marin-456c7
+          projectId: bonus4-6f61a
