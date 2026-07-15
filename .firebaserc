@@ -1,6 +1,7 @@
 {
   "projects": {
-    "default": "bonus4-6f61a"
+    "default": "bonus4-6f61a",
+    "main": "marin-456c7"
   },
   "targets": {},
   "etags": {}
