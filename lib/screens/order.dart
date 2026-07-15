@@ -1265,14 +1265,19 @@ class _DetailTabState extends State<_DetailTab> {
     return s;
   }
 
-  /// Sửa số tiền/điểm của 1 mã đã nhập — không cho xóa, chỉ cho sửa,
+  /// Sửa số tiền của 1 mã đã nhập — không cho xóa, chỉ cho sửa,
   /// và bắt buộc phải xác nhận nghiêm túc trước khi lưu vì ảnh hưởng tiền của khách.
+  /// Loại B dùng chung logic nhập theo tiền như Loại A, sau đó tự quy đổi
+  /// ra điểm theo giá 1 điểm hiện tại (config.ticketPriceB).
   Future<void> _editOrder(BuildContext context, Order order) async {
     final isTypeA = order.type == "A";
+    final config = ConfigService().getConfig();
+    final ticketPriceB = config.ticketPriceB;
 
-    final controller = TextEditingController(
-      text: isTypeA ? _trimDecimal(order.amount) : order.unit.toString(),
-    );
+    // Giá trị hiện tại quy đổi ra tiền (nghìn đồng) để hiển thị, dùng chung cho A & B.
+    final currentMoney = isTypeA ? order.amount : order.unit * ticketPriceB;
+
+    final controller = TextEditingController(text: _trimDecimal(currentMoney));
 
     final newValue = await showDialog<double>(
       context: context,
@@ -1283,9 +1288,9 @@ class _DetailTabState extends State<_DetailTab> {
           controller: controller,
           autofocus: true,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: InputDecoration(
-            labelText: isTypeA ? "Số tiền (nghìn đồng)" : "Số điểm",
-            border: const OutlineInputBorder(),
+          decoration: const InputDecoration(
+            labelText: "Số tiền (nghìn đồng)",
+            border: OutlineInputBorder(),
           ),
         ),
         actions: [
@@ -1313,12 +1318,11 @@ class _DetailTabState extends State<_DetailTab> {
     if (newValue == null) return;
     if (!context.mounted) return;
 
-    final oldDisplay = isTypeA
-        ? widget.formatNumber(order.amount)
-        : "${order.unit} điểm";
-    final newDisplay = isTypeA
-        ? widget.formatNumber(newValue)
-        : "${newValue.toInt()} điểm";
+    // Loại B: quy đổi số tiền vừa nhập thành điểm theo giá 1 điểm hiện tại.
+    final newUnit = ticketPriceB > 0 ? (newValue / ticketPriceB).round() : 0;
+
+    final oldDisplay = widget.formatNumber(currentMoney);
+    final newDisplay = widget.formatNumber(newValue);
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -1411,7 +1415,7 @@ class _DetailTabState extends State<_DetailTab> {
     if (isTypeA) {
       order.amount = newValue;
     } else {
-      order.unit = newValue.toInt();
+      order.unit = newUnit;
     }
     await order.save();
 
@@ -1669,23 +1673,14 @@ class _DetailTabState extends State<_DetailTab> {
                                   Text(
                                     isTypeA
                                         ? widget.formatNumber(order.amount)
-                                        : "${order.unit} điểm",
+                                        : widget.formatNumber(
+                                            order.unit * config.ticketPriceB,
+                                          ),
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                  if (!isTypeA)
-                                    Text(
-                                      widget.formatNumber(
-                                        order.unit * config.ticketPriceB,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
                                   const SizedBox(height: 8),
                                   Material(
                                     color: colorScheme.primary.withValues(

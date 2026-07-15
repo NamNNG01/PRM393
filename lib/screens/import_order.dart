@@ -7,6 +7,7 @@ import '../repositories/customer_repository.dart';
 import '../repositories/ticket_repository.dart';
 
 import '../utils/date_util.dart';
+import '../services/config_service.dart';
 
 class ImportOrderScreen extends StatefulWidget {
   const ImportOrderScreen({super.key});
@@ -94,7 +95,7 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
         );
       }
 
-      if (selectedType == "A" && _amountUnit == 0.001 && value < 1000) {
+      if (_amountUnit == 0.001 && value < 1000) {
         throw FormatException(
           "Dòng $lineNumber: Số tiền '$valueStr' không hợp lệ. Khi chọn đơn vị Đồng, số tiền tối thiểu phải là 1.000đ.",
         );
@@ -108,52 +109,46 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
   }
 
   Widget _buildDynamicExampleBox(ColorScheme colorScheme) {
+    final loaiText = selectedType == "A" ? "Loại A" : "Loại B";
     String title = "";
     String content = "";
 
-    if (selectedType == "A") {
-      if (_amountUnit == 1.0) {
-        title = "Định dạng nhập Loại A: [mã] x [số tiền] (Đơn vị: Nghìn đồng)";
-        content =
-            "• Mã phải từ 00 đến 99.\n"
-            "• Quy ước nhập tiền:\n"
-            "  - 10 = 10.000 VNĐ\n"
-            "  - 100 = 100.000 VNĐ\n"
-            "  - 1000 = 1.000.000 VNĐ\n\n"
-            "Ví dụ hợp lệ:\n"
-            "90 x 10 (Mã 90, số tiền 10.000 VNĐ)\n"
-            "23 x 100 (Mã 23, số tiền 100.000 VNĐ)\n\n"
-            "Ví dụ không hợp lệ:\n"
-            "100 x 50 (Mã > 99)\n"
-            "abc x 10 (Mã không phải số)";
-      } else {
-        title = "Định dạng nhập Loại A: [mã] x [số tiền] (Đơn vị: Đồng)";
-        content =
-            "• Mã phải từ 00 đến 99.\n"
-            "• Quy ước nhập tiền:\n"
-            "  - 10000 = 10.000 VNĐ\n"
-            "  - 100000 = 100.000 VNĐ\n"
-            "  - Tối thiểu phải từ 1.000 VNĐ trở lên.\n\n"
-            "Ví dụ hợp lệ:\n"
-            "90 x 10000 (Mã 90, số tiền 10.000 VNĐ)\n"
-            "23 x 100000 (Mã 23, số tiền 100.000 VNĐ)\n\n"
-            "Ví dụ không hợp lệ:\n"
-            "90 x 500 (Số tiền dưới 1.000 VNĐ)\n"
-            "100 x 10000 (Mã > 99)";
-      }
-    } else {
-      title = "Định dạng nhập Loại B: [mã] x [điểm] (Đơn vị: Điểm)";
+    if (_amountUnit == 1.0) {
+      title = "Định dạng nhập $loaiText: [mã] x [số tiền] (Đơn vị: Nghìn đồng)";
       content =
           "• Mã phải từ 00 đến 99.\n"
-          "• Nhập số điểm trực tiếp:\n"
-          "  - 10 = 10 điểm\n"
-          "  - 100 = 100 điểm\n\n"
+          "• Quy ước nhập tiền:\n"
+          "  - 10 = 10.000 VNĐ\n"
+          "  - 100 = 100.000 VNĐ\n"
+          "  - 1000 = 1.000.000 VNĐ\n\n"
           "Ví dụ hợp lệ:\n"
-          "90 x 10 (Mã 90, 10 điểm)\n"
-          "23 x 100 (Mã 23, 100 điểm)\n\n"
+          "90 x 10 (Mã 90, số tiền 10.000 VNĐ)\n"
+          "23 x 100 (Mã 23, số tiền 100.000 VNĐ)\n\n"
           "Ví dụ không hợp lệ:\n"
-          "100 x 5 (Mã > 99)\n"
-          "90 x -5 (Điểm không hợp lệ)";
+          "100 x 50 (Mã > 99)\n"
+          "abc x 10 (Mã không phải số)";
+    } else {
+      title = "Định dạng nhập $loaiText: [mã] x [số tiền] (Đơn vị: Đồng)";
+      content =
+          "• Mã phải từ 00 đến 99.\n"
+          "• Quy ước nhập tiền:\n"
+          "  - 10000 = 10.000 VNĐ\n"
+          "  - 100000 = 100.000 VNĐ\n"
+          "  - Tối thiểu phải từ 1.000 VNĐ trở lên.\n\n"
+          "Ví dụ hợp lệ:\n"
+          "90 x 10000 (Mã 90, số tiền 10.000 VNĐ)\n"
+          "23 x 100000 (Mã 23, số tiền 100.000 VNĐ)\n\n"
+          "Ví dụ không hợp lệ:\n"
+          "90 x 500 (Số tiền dưới 1.000 VNĐ)\n"
+          "100 x 10000 (Mã > 99)";
+    }
+
+    if (selectedType == "B") {
+      final config = ConfigService().getConfig();
+      content +=
+          "\n\nLưu ý: Số tiền nhập vào sẽ được hệ thống tự quy đổi ra điểm "
+          "theo giá 1 điểm hiện tại (${config.ticketPriceB.toStringAsFixed(0)} "
+          "nghìn đồng/điểm).";
     }
 
     return Container(
@@ -480,7 +475,7 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                           Expanded(
                             child: _TypeOption(
                               label: "Loại B",
-                              subtitle: "Theo điểm",
+                              subtitle: "Theo số tiền",
                               icon: Icons.stars_outlined,
                               selected: selectedType == "B",
                               color: Colors.teal,
@@ -490,65 +485,63 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                         ],
                       ),
                     ),
-                    if (selectedType == "A") ...[
-                      const SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.monetization_on_outlined,
-                            color: colorScheme.primary,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            "Đơn vị tiền:",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 8),
-
-                      DropdownButtonFormField<double>(
-                        initialValue: _amountUnit,
-                        isExpanded: true,
-                        decoration: InputDecoration(
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.monetization_on_outlined,
+                          color: colorScheme.primary,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          "Đơn vị tiền:",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            color: colorScheme.onSurfaceVariant,
                           ),
                         ),
-                        items: const [
-                          DropdownMenuItem(
-                            value: 1.0,
-                            child: Text(
-                              'Nghìn đồng (×1.000)',
-                              style: TextStyle(fontSize: 13),
-                            ),
-                          ),
-                          DropdownMenuItem(
-                            value: 0.001,
-                            child: Text(
-                              'Đồng (×1)',
-                              style: TextStyle(fontSize: 13),
-                            ),
-                          ),
-                        ],
-                        onChanged: (v) {
-                          setState(() {
-                            _amountUnit = v ?? 1.0;
-                          });
-                        },
+                      ],
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    DropdownButtonFormField<double>(
+                      initialValue: _amountUnit,
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
-                    ],
+                      items: const [
+                        DropdownMenuItem(
+                          value: 1.0,
+                          child: Text(
+                            'Nghìn đồng (×1.000)',
+                            style: TextStyle(fontSize: 13),
+                          ),
+                        ),
+                        DropdownMenuItem(
+                          value: 0.001,
+                          child: Text(
+                            'Đồng (×1)',
+                            style: TextStyle(fontSize: 13),
+                          ),
+                        ),
+                      ],
+                      onChanged: (v) {
+                        setState(() {
+                          _amountUnit = v ?? 1.0;
+                        });
+                      },
+                    ),
                     const SizedBox(height: 20),
                     Row(
                       children: [
@@ -603,11 +596,9 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                       maxLines: 12,
                       textAlignVertical: TextAlignVertical.top,
                       decoration: InputDecoration(
-                        hintText: selectedType == "A"
-                            ? (_amountUnit == 1.0
-                                  ? "Dán hoặc nhập mã Loại A (Nghìn đồng)...\nVí dụ:\n90 x 10\n05 x 100"
-                                  : "Dán hoặc nhập mã Loại A (Đồng)...\nVí dụ:\n90 x 10000\n05 x 100000")
-                            : "Dán hoặc nhập mã Loại B (Điểm)...\nVí dụ:\n90 x 10\n05 x 100",
+                        hintText: _amountUnit == 1.0
+                            ? "Dán hoặc nhập mã Loại $selectedType (Nghìn đồng)...\nVí dụ:\n90 x 10\n05 x 100"
+                            : "Dán hoặc nhập mã Loại $selectedType (Đồng)...\nVí dụ:\n90 x 10000\n05 x 100000",
                         hintStyle: TextStyle(
                           color: colorScheme.onSurfaceVariant.withValues(
                             alpha: 0.5,
@@ -631,11 +622,9 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                         ),
                         filled: true,
                         fillColor: colorScheme.surfaceContainerLowest,
-                        helperText: selectedType == "A"
-                            ? (_amountUnit == 1.0
-                                  ? "Lưu ý nhập tiền: 10 = 10.000 VNĐ, 100 = 100.000 VNĐ. Phân cách: x, *, -, dấu cách hoặc :"
-                                  : "Lưu ý nhập tiền: Nhập đúng số tiền đồng (tối thiểu 1000). Ví dụ: 10000 = 10.000 VNĐ.")
-                            : "Lưu ý nhập điểm: Nhập trực tiếp số điểm. Ví dụ: 10 = 10 điểm.",
+                        helperText: _amountUnit == 1.0
+                            ? "Lưu ý nhập tiền: 10 = 10.000 VNĐ, 100 = 100.000 VNĐ. Phân cách: x, *, -, dấu cách hoặc :"
+                            : "Lưu ý nhập tiền: Nhập đúng số tiền đồng (tối thiểu 1000). Ví dụ: 10000 = 10.000 VNĐ.",
                         helperMaxLines: 2,
                       ),
                     ),
@@ -687,16 +676,30 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                     return;
                   }
 
-                  // Áp dụng đơn vị tiền vào tất cả giá trị (chỉ áp dụng cho loại A)
+                  // Áp dụng đơn vị tiền vào tất cả giá trị (cho cả 2 loại)
                   final multiplied = parsed.map(
-                    (k, v) =>
-                        MapEntry(k, selectedType == "A" ? v * _amountUnit : v),
+                    (k, v) => MapEntry(k, v * _amountUnit),
                   );
 
                   final totalValue = multiplied.values.fold<num>(
                     0,
                     (a, b) => a + b,
                   );
+
+                  // Loại B: quy đổi số tiền (nghìn đồng) đã nhập thành điểm
+                  // theo giá 1 điểm hiện tại trong Cài đặt, cùng logic với Loại A.
+                  final Map<String, num> dataToImport = selectedType == "B"
+                      ? multiplied.map((k, v) {
+                          final ticketPriceB = ConfigService()
+                              .getConfig()
+                              .ticketPriceB;
+                          final points = ticketPriceB > 0
+                              ? (v / ticketPriceB).round()
+                              : 0;
+                          return MapEntry(k, points);
+                        })
+                      : multiplied;
+
                   final customerRepo = CustomerRepository();
 
                   Customer customer;
@@ -759,7 +762,7 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                   );
 
                   await OrderRepository().importOrders(
-                    data: multiplied,
+                    data: dataToImport,
                     type: selectedType,
                     customerId: customer.id,
                     ticketId: ticket.id,
