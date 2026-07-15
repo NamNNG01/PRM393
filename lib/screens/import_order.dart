@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../repositories/order_repository.dart';
 import '../models/customer.dart';
 import '../repositories/customer_repository.dart';
@@ -353,6 +354,10 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                       TextField(
                         controller: phoneController,
                         keyboardType: TextInputType.phone,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(10),
+                        ],
                         decoration: InputDecoration(
                           prefixIcon: Icon(
                             Icons.phone_outlined,
@@ -375,6 +380,7 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                             ),
                           ),
                           labelText: "Số điện thoại",
+                          helperText: "Nhập đúng 10 chữ số",
                           filled: true,
                           fillColor: colorScheme.surfaceContainerLowest,
                         ),
@@ -703,6 +709,21 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text("Nhập tên khách hàng"),
+                          backgroundColor: Colors.orange,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                      return;
+                    }
+
+                    final phone = phoneController.text.trim();
+                    if (phone.isNotEmpty &&
+                        !RegExp(r'^\d{10}$').hasMatch(phone)) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            "Số điện thoại phải là số và gồm đúng 10 chữ số",
+                          ),
                           backgroundColor: Colors.orange,
                           behavior: SnackBarBehavior.floating,
                         ),
