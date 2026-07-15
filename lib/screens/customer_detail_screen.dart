@@ -53,7 +53,8 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
     );
 
     if (picked != null) {
-      final formatted = "${picked.year}-"
+      final formatted =
+          "${picked.year}-"
           "${picked.month.toString().padLeft(2, '0')}-"
           "${picked.day.toString().padLeft(2, '0')}";
       setState(() {
@@ -136,9 +137,10 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
     final totalAmountA = orders
         .where((e) => e.type == "A")
         .fold<double>(0.0, (sum, item) => sum + item.amount * 1000);
-    final totalPointsB = orders
+
+    final totalAmountB = orders
         .where((e) => e.type == "B")
-        .fold<int>(0, (sum, item) => sum + item.unit);
+        .fold<double>(0.0, (sum, item) => sum + item.unit * 1000);
 
     return Scaffold(
       backgroundColor: colorScheme.surfaceContainerLowest,
@@ -277,9 +279,9 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                       Expanded(
                         child: _buildStatItem(
                           context,
-                          icon: Icons.stars_outlined,
-                          label: "Tổng điểm B",
-                          value: "$totalPointsB điểm",
+                          icon: Icons.payments_outlined,
+                          label: "Doanh số loại B",
+                          value: formatCurrency(totalAmountB),
                         ),
                       ),
                     ],
@@ -498,7 +500,9 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                                   Text(
                                     order.type == "A"
                                         ? formatCurrency(order.amount * 1000)
-                                        : "${order.unit} điểm",
+                                        : formatCurrency(
+                                            order.unit.toDouble() * 1000,
+                                          ),
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 15,

@@ -5,6 +5,7 @@ import 'package:printing/printing.dart';
 import '../utils/export_helper.dart';
 import '../models/order.dart';
 import '../models/configuration.dart';
+import 'package:flutter/foundation.dart';
 
 class ExportService {
   static String _formatMoney(dynamic value) {
@@ -51,6 +52,8 @@ class ExportService {
     required Map<String, dynamic> resultB,
     required String date,
   }) async {
+    debugPrint("========== RESULT B EXCEL ==========");
+    debugPrint(resultB.toString());
     final Excel excel = Excel.createExcel();
     excel.delete('Sheet1'); // Remove default sheet
 
@@ -362,7 +365,7 @@ class ExportService {
     _writeRow(
       bSheet,
       10,
-      ["Mã SP", "Chuyển đi (điểm)", ""],
+      ["Mã SP", "Chuyển đi", ""],
       style: headerStyle,
       rowHeight: 26.0,
     );
@@ -381,7 +384,7 @@ class ExportService {
       _writeRowWithStyles(
         bSheet,
         rowIdxB,
-        [key, _formatPoint(fVal), ""],
+        [key, _formatMoney(fVal * 1000), ""],
         [labelStyle, valueStyle, null],
       );
       bSheet.merge(
@@ -558,7 +561,7 @@ class ExportService {
             pw.Text("Không có dữ liệu loại B")
           else
             pw.TableHelper.fromTextArray(
-              headers: ["Mã SP", "Chuyển đi (điểm)"],
+              headers: ["Mã SP", "Chuyển đi"],
               data: keysB.map((key) {
                 final fVal = fB[key] ?? 0;
                 return [key, _formatPoint(fVal)];
@@ -1178,12 +1181,12 @@ class ExportService {
 
     // Calculate totals
     final typeA = <String, double>{};
-    final typeB = <String, int>{};
+    final typeB = <String, double>{};
     for (final o in orders) {
       if (o.type == "A") {
         typeA[o.productCode] = (typeA[o.productCode] ?? 0) + o.amount;
       } else {
-        typeB[o.productCode] = (typeB[o.productCode] ?? 0) + o.unit;
+        typeB[o.productCode] = (typeB[o.productCode] ?? 0) + o.unit.toDouble();
       }
     }
 
@@ -1193,12 +1196,15 @@ class ExportService {
     }
     final commissionA = totalA * config.commissionRateA;
 
-    int totalPointB = 0;
     double totalMoneyB = 0;
-    for (final e in typeB.entries) {
-      totalPointB += e.value;
-      totalMoneyB += e.value * config.ticketPriceB;
+
+    for (final money in typeB.values) {
+      totalMoneyB += money;
     }
+
+    // Quy đổi tiền -> điểm để tính hoa hồng
+    final totalPointB = totalMoneyB / config.ticketPriceB;
+
     final commissionB = totalPointB * config.commissionPerPointB;
 
     final totalRevenue = totalA + totalMoneyB;
@@ -1252,7 +1258,7 @@ class ExportService {
     );
 
     // Sheet 2: Loại A
-    final Sheet aSheet = excel['MÃ Loại A'];
+    final Sheet aSheet = excel['Mã Loại A'];
     aSheet.setColumnWidth(0, 25.0);
     aSheet.setColumnWidth(1, 25.0);
     _writeExcelHeader(aSheet, " MÃ LOẠI A", date, 2);
@@ -1309,7 +1315,7 @@ class ExportService {
     }
 
     // Sheet 3: Loại B
-    final Sheet bSheet = excel[' Loại B'];
+    final Sheet bSheet = excel[' Mã Loại B'];
     bSheet.setColumnWidth(0, 25.0);
     bSheet.setColumnWidth(1, 25.0);
     bSheet.setColumnWidth(2, 25.0);
@@ -1317,7 +1323,7 @@ class ExportService {
     _writeRow(
       bSheet,
       3,
-      ["Chỉ số / Mã SP", "Điểm", "Giá trị"],
+      ["Chỉ số / Mã SP", "", "Số tiền"],
       style: headerStyle,
       rowHeight: 28.0,
     );
@@ -1327,20 +1333,11 @@ class ExportService {
       ["Tổng Doanh Thu B", "", _formatMoney(totalMoneyB * 1000)],
       [boldLabelStyle, null, boldValueStyle],
     );
+
     _writeRowWithStyles(
       bSheet,
       5,
-      ["Tổng Điểm B", "$totalPointB điểm", ""],
-      [labelStyle, valueStyle, null],
-    );
-    _writeRowWithStyles(
-      bSheet,
-      6,
-      [
-        "Hoa hồng B (${_formatMoney(config.commissionPerPointB * 1000)}/điểm)",
-        _formatMoney(commissionB * 1000),
-        "",
-      ],
+      ["Hoa hồng B", "", _formatMoney(commissionB * 1000)],
       [labelStyle, valueStyle, null],
     );
 
@@ -1358,7 +1355,7 @@ class ExportService {
     _writeRow(
       bSheet,
       9,
-      ["Mã SP", "Điểm", "Doanh thu"],
+      ["Mã SP", "Tiền", ""],
       style: headerStyle,
       rowHeight: 26.0,
     );
@@ -1366,11 +1363,11 @@ class ExportService {
     final keysB = typeB.keys.toList()..sort();
     for (final key in keysB) {
       final pts = typeB[key]!;
-      final money = pts * config.ticketPriceB;
+      final money = typeB[key]!;
       _writeRowWithStyles(
         bSheet,
         rowIdxB++,
-        [key, "$pts điểm", _formatMoney(money * 1000)],
+        [key, _formatMoney(money * 1000), ""],
         [labelStyle, valueStyle, valueStyle],
       );
     }

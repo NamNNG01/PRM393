@@ -50,6 +50,9 @@ class _ReportScreenState extends State<ReportScreen> {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint("========== RESULT B UI ==========");
+    debugPrint(widget.resultB.toString());
+
     final colorScheme = Theme.of(context).colorScheme;
 
     final revA = widget.resultA["tongDoanhThu"] * 1000 ?? 0;
@@ -509,10 +512,10 @@ class _ReportScreenState extends State<ReportScreen> {
               ),
               _buildKpiCard(
                 title: "Giữ tối đa / mã",
-                value: _formatPoint(keptLimit),
+                value: _formatMoney(keptLimit),
                 icon: Icons.tune_outlined,
                 baseColor: Colors.deepPurple,
-                subtext: "Giới hạn điểm giữ lại",
+                subtext: "Giới hạn tiền giữ lại",
               ),
               _buildKpiCard(
                 title: "Thực chuyển",
@@ -914,7 +917,7 @@ class _ReportScreenState extends State<ReportScreen> {
                               horizontal: 8,
                             ),
                             child: Text(
-                              isTypeA ? _formatMoney(rVal) : _formatPoint(rVal),
+                              isTypeA ? _formatMoney(rVal) : _formatMoney(rVal),
                               style: const TextStyle(
                                 fontWeight: FontWeight.w600,
                                 fontSize: 14,
@@ -928,7 +931,7 @@ class _ReportScreenState extends State<ReportScreen> {
                               horizontal: 8,
                             ),
                             child: Text(
-                              isTypeA ? _formatMoney(fVal) : _formatPoint(fVal),
+                              isTypeA ? _formatMoney(fVal) : _formatMoney(fVal),
                               style: TextStyle(
                                 fontWeight: FontWeight.w600,
                                 fontSize: 14,

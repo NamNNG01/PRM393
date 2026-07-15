@@ -145,29 +145,26 @@ class _OrderScreenState extends State<OrderScreen> {
     buffer.writeln("");
     buffer.writeln("LOẠI B");
 
-    int totalPointB = 0;
     double totalMoneyB = 0;
 
     for (final e in typeB.entries) {
-      totalPointB += e.value;
-
-      final money = e.value * config.ticketPriceB;
+      final money = e.value.toDouble();
 
       totalMoneyB += money;
 
-      buffer.writeln("${e.key} : ${e.value} điểm (${_formatNumber(money)})");
+      buffer.writeln("${e.key} : ${_formatNumber(money)}");
     }
 
+    // Số điểm tương đương để tính hoa hồng
+    final totalPointB = totalMoneyB / config.ticketPriceB;
+
+    // Hoa hồng = điểm * tiền hoa hồng mỗi điểm
     final commissionB = totalPointB * config.commissionPerPointB;
 
-    buffer.writeln(
-      "Tổng B: $totalPointB điểm "
-      "(${_formatNumber(totalMoneyB)})",
-    );
+    buffer.writeln("Tổng B: ${_formatNumber(totalMoneyB)}");
 
     buffer.writeln(
-      "Hoa hồng B "
-      "(${_formatNumber(config.commissionPerPointB)}/điểm): "
+      "Hoa hồng B :  "
       "${_formatNumber(commissionB)}",
     );
 
@@ -555,17 +552,21 @@ class _OrderScreenState extends State<OrderScreen> {
               final config = ConfigService().getConfig();
               double totalCommission = 0;
               final orders = OrderRepository().getTodayOrders();
+
               double totalRevenue = 0;
 
               double totalAmountA = 0;
               double totalAmountB = 0;
+
               final grouped = <String, num>{};
+
+              // lưu tổng tiền B để cuối tính commission
+              double totalPointB = 0;
 
               for (final o in orders) {
                 final revenueValue = o.type == "A"
                     ? o.amount
-                    : o.unit * config.ticketPriceB;
-
+                    : o.unit.toDouble();
                 totalRevenue += revenueValue;
 
                 final groupKey = "${o.type}|${o.productCode}";
@@ -574,12 +575,18 @@ class _OrderScreenState extends State<OrderScreen> {
 
                 if (o.type == "A") {
                   totalAmountA += o.amount;
+
                   totalCommission += o.amount * config.commissionRateA;
                 } else {
-                  totalAmountB += o.unit * config.ticketPriceB;
-                  totalCommission += o.unit * config.commissionPerPointB;
+                  totalAmountB += o.unit;
                 }
               }
+
+              // Sau khi có tổng tiền B mới tính hoa hồng
+
+              totalPointB = totalAmountB / config.ticketPriceB;
+
+              totalCommission += totalPointB * config.commissionPerPointB;
               final transferToUpper =
                   totalAmountA + totalAmountB - totalCommission;
               final exportGrouped = grouped;
@@ -1430,9 +1437,7 @@ class _DetailTabState extends State<_DetailTab> {
           (customer?.phone.toLowerCase().contains(kw) ?? false);
     }).toList();
 
-    double orderValue(Order o) =>
-        o.type == "A" ? o.amount : o.unit * config.ticketPriceB;
-
+    double orderValue(Order o) => o.type == "A" ? o.amount : o.unit.toDouble();
     switch (sortOption) {
       case _OrderSortOption.timeDesc:
         filteredOrders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
@@ -1657,25 +1662,17 @@ class _DetailTabState extends State<_DetailTab> {
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
                                   Text(
-                                    isTypeA
-                                        ? widget.formatNumber(order.amount)
-                                        : "${order.unit} điểm",
+                                    widget.formatNumber(
+                                      isTypeA
+                                          ? order.amount
+                                          : order.unit.toDouble(),
+                                    ),
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                  if (!isTypeA)
-                                    Text(
-                                      widget.formatNumber(
-                                        order.unit * config.ticketPriceB,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
+
                                   const SizedBox(height: 8),
                                   Material(
                                     color: colorScheme.primary.withValues(

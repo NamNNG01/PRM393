@@ -75,13 +75,15 @@ class RiskEngine {
     final maxRisk = config.maxRiskMultiplier;
 
     /// Tổng số điểm
-    final totalUnits = data.values.fold(0, (a, b) => a + b);
 
     /// Tổng doanh thu
-    final totalRevenue = totalUnits * ticketPrice;
+    final totalRevenue = data.values.fold<int>(0, (a, b) => a + b);
 
     /// Tổng hoa hồng đại lý nhận được
-    final totalCommission = totalUnits * commissionPerPoint;
+    final totalPoint = totalRevenue / ticketPrice;
+
+    /// Tổng hoa hồng
+    final totalCommission = totalPoint * commissionPerPoint;
 
     /// Quỹ dùng để chịu rủi ro
     final insuranceFund = totalCommission;
@@ -89,57 +91,58 @@ class RiskEngine {
     /// Số điểm tối đa được giữ trên mỗi mã
     final cap = insuranceFund / (refundRate * maxRisk);
 
-    final retainPerCode = cap.floor();
+    final retainMoneyPerCode = (cap * ticketPrice);
 
-    final Map<String, int> retained = {};
-    final Map<String, int> forwarded = {};
+    final Map<String, double> retained = {};
+    final Map<String, double> forwarded = {};
+    data.forEach((order, money) {
+      final value = money.toDouble();
 
-    data.forEach((order, unit) {
-      if (unit <= retainPerCode) {
-        retained[order.productCode] = unit;
+      if (value <= retainMoneyPerCode) {
+        retained[order.productCode] = value;
         forwarded[order.productCode] = 0;
       } else {
-        retained[order.productCode] = retainPerCode;
-        forwarded[order.productCode] = unit - retainPerCode;
+        retained[order.productCode] = retainMoneyPerCode;
+        forwarded[order.productCode] = value - retainMoneyPerCode;
       }
     });
 
-    /// Tổng điểm giữ
-    final totalRetainedUnits = retained.values.fold(0, (a, b) => a + b);
+    final totalRetainedMoney = retained.values.fold<double>(0, (a, b) => a + b);
 
-    /// Tổng điểm chuyển
-    final totalForwardedUnits = forwarded.values.fold(0, (a, b) => a + b);
+    final totalForwardedMoney = forwarded.values.fold<double>(
+      0,
+      (a, b) => a + b,
+    );
 
-    /// Quy đổi tiền
-    final retainedMoney = totalRetainedUnits * ticketPrice;
+    /// Quy đổi phần chuyển sang điểm để tính hoa hồng
+    final forwardedPoint = totalForwardedMoney / ticketPrice;
 
-    final forwardedMoney = totalForwardedUnits * ticketPrice;
+    /// Hoa hồng chỉ tính trên phần chuyển
+    final commissionMoney = forwardedPoint * commissionPerPoint;
 
-    /// Hoa hồng trên phần chuyển chủ
-    final commissionMoney = totalForwardedUnits * commissionPerPoint;
+    /// Thực chuyển
+    final actualPayment = totalForwardedMoney - commissionMoney;
 
-    /// Thực chuyển chủ
-    final actualPayment = forwardedMoney - commissionMoney;
-    final cam = retainedMoney + commissionMoney;
+    final cam = totalRetainedMoney + commissionMoney;
 
     return {
-      "tongDoanhThu": totalRevenue.floor(),
+      "tongDoanhThu": totalRevenue,
 
-      "giaGiuMoiCon": retainPerCode,
+      "giaGiuMoiCon": retainMoneyPerCode,
 
-      "tongGiuLai": retainedMoney.floor(),
+      "tongGiuLai": totalRetainedMoney,
 
       "chi_tiết_giữ_lại": retained,
 
       "chi_tiết_chuyển": forwarded,
 
-      "tongChuyen": forwardedMoney.floor(),
+      "tongChuyen": totalForwardedMoney,
 
-      "hoa_hồng": commissionMoney.floor(),
+      "hoa_hồng": commissionMoney,
 
-      "tongThucChuyen": actualPayment.floor(),
+      "tongThucChuyen": actualPayment,
 
-      "cam": cam.floor(),
+      "cam": cam,
     };
   }
 }

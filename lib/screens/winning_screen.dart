@@ -230,9 +230,14 @@ class _WinningScreenState extends State<WinningScreen> {
         );
 
         for (final Order order in matched) {
-          final payout = order.unit * config.refundRateB * item.multiplier;
+          // Tiền người chơi nhập
+          final orderValue = order.unit.toDouble() * 1000;
 
-          final orderValue = order.unit * config.ticketPriceB;
+          // Quy đổi tiền B ra điểm để tính trả thưởng
+          final point = orderValue / config.ticketPriceB;
+
+          // Tiền trả thưởng
+          final payout = point * config.refundRateB * item.multiplier;
 
           await winningRepo.add(
             WinningTicket(
