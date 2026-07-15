@@ -599,9 +599,9 @@ class _ImportOrderScreenState extends State<ImportOrderScreen> {
                       decoration: InputDecoration(
                         hintText: selectedType == "A"
                             ? (_amountUnit == 1.0
-                                  ? "Dán hoặc nhập đơn hàng Loại A (Nghìn đồng)...\nVí dụ:\n90 x 10\n05 x 100"
-                                  : "Dán hoặc nhập đơn hàng Loại A (Đồng)...\nVí dụ:\n90 x 10000\n05 x 100000")
-                            : "Dán hoặc nhập đơn hàng Loại B (Điểm)...\nVí dụ:\n90 x 10\n05 x 100",
+                                  ? "Dán hoặc nhập mã Loại A (Nghìn đồng)...\nVí dụ:\n90 x 10\n05 x 100"
+                                  : "Dán hoặc nhập mã Loại A (Đồng)...\nVí dụ:\n90 x 10000\n05 x 100000")
+                            : "Dán hoặc nhập mã Loại B (Điểm)...\nVí dụ:\n90 x 10\n05 x 100",
                         hintStyle: TextStyle(
                           color: colorScheme.onSurfaceVariant.withValues(
                             alpha: 0.5,

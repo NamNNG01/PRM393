@@ -206,7 +206,13 @@ class _OrderScreenState extends State<OrderScreen> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final today = DateTime.now();
 
+    final isPast = DateTime(
+      DateUtil.selectedDate.year,
+      DateUtil.selectedDate.month,
+      DateUtil.selectedDate.day,
+    ).isBefore(DateTime(today.year, today.month, today.day));
     return Scaffold(
       backgroundColor: colorScheme.surfaceContainerLowest,
       extendBodyBehindAppBar: false,
@@ -257,7 +263,7 @@ class _OrderScreenState extends State<OrderScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              "Đơn hàng",
+                              "Mã",
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               textAlign: TextAlign.center,
@@ -469,8 +475,9 @@ class _OrderScreenState extends State<OrderScreen> {
             valueListenable: Hive.box<Order>(HiveBoxes.orderBox).listenable(),
             builder: (context, _, __) {
               final orderBox = Hive.box<Order>(HiveBoxes.orderBox);
+              final ordersList = OrderRepository().getAll();
 
-              if (orderBox.isEmpty) {
+              if (ordersList.isEmpty) {
                 return Center(
                   child: Padding(
                     padding: const EdgeInsets.all(24),
@@ -499,44 +506,47 @@ class _OrderScreenState extends State<OrderScreen> {
                         ),
                         const SizedBox(height: 24),
                         Text(
-                          "Chưa có đơn hàng nào",
+                          "Chưa có mã nào",
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.titleLarge
                               ?.copyWith(fontWeight: FontWeight.w700),
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          "Bắt đầu bằng cách nhập danh sách đơn hàng loại A hoặc B",
+                          "Bắt đầu bằng cách nhập danh sách mã loại A hoặc B",
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey[600],
                           ),
                         ),
-                        const SizedBox(height: 28),
-                        SizedBox(
-                          height: 48,
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const ImportOrderScreen(),
+
+                        if (!isPast) ...[
+                          const SizedBox(height: 28),
+                          SizedBox(
+                            height: 48,
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const ImportOrderScreen(),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.add),
+                              label: const Text("Nhập mã"),
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
                                 ),
-                              );
-                            },
-                            icon: const Icon(Icons.add),
-                            label: const Text("Nhập đơn hàng"),
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
                               ),
                             ),
                           ),
-                        ),
+                        ],
                       ],
                     ),
                   ),
@@ -584,7 +594,7 @@ class _OrderScreenState extends State<OrderScreen> {
                       children: [
                         Expanded(
                           child: _StatCard(
-                            label: "Tổng đơn hàng",
+                            label: "Tổng số mã",
                             value: "${orders.length}",
                             icon: Icons.receipt_long_outlined,
                             color: colorScheme.primary,
@@ -658,56 +668,57 @@ class _OrderScreenState extends State<OrderScreen> {
       floatingActionButton: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(28),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [colorScheme.primary, colorScheme.tertiary],
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: colorScheme.primary.withValues(alpha: 0.4),
-                  blurRadius: 14,
-                  offset: const Offset(0, 6),
-                ),
-              ],
-            ),
-            child: Material(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(28),
-              child: InkWell(
+          if (!isPast)
+            Container(
+              decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(28),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const ImportOrderScreen(),
-                    ),
-                  );
-                },
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 22, vertical: 16),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.add, color: Colors.white),
-                      SizedBox(width: 8),
-                      Text(
-                        "Nhập",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                        ),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [colorScheme.primary, colorScheme.tertiary],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: colorScheme.primary.withValues(alpha: 0.4),
+                    blurRadius: 14,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(28),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(28),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const ImportOrderScreen(),
                       ),
-                    ],
+                    );
+                  },
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 22, vertical: 16),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.add, color: Colors.white),
+                        SizedBox(width: 8),
+                        Text(
+                          "Nhập",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
 
           const SizedBox(width: 12),
 
@@ -726,9 +737,7 @@ class _OrderScreenState extends State<OrderScreen> {
               ],
             ),
             child: Theme(
-              data: Theme.of(context).copyWith(
-                cardColor: Colors.white,
-              ),
+              data: Theme.of(context).copyWith(cardColor: Colors.white),
               child: PopupMenuButton<String>(
                 tooltip: "Xuất dữ liệu",
                 elevation: 6,
@@ -859,7 +868,7 @@ enum _OrderSortOption implements _SortOptionLike {
   const _OrderSortOption(this.label, this.icon);
 }
 
-/// Nút mở menu sắp xếp, dùng chung cho các danh sách trong màn Đơn hàng
+/// Nút mở menu sắp xếp, dùng chung cho các danh sách trong màn mã
 class _SortMenuButton<T extends _SortOptionLike> extends StatelessWidget {
   final T value;
   final List<T> values;
@@ -1822,7 +1831,6 @@ class _StatCard extends StatelessWidget {
     required this.icon,
     required this.color,
   });
-
 
   @override
   Widget build(BuildContext context) {
