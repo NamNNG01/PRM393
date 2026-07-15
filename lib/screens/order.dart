@@ -1262,13 +1262,23 @@ class _DetailTabState extends State<_DetailTab> {
         "${_two(dt.hour)}:${_two(dt.minute)}";
   }
 
+  /// Hiển thị số thập phân đúng giá trị thực (2.56 giữ nguyên 2.56),
+  /// chỉ bỏ phần thập phân khi giá trị là số nguyên (100.0 -> 100).
+  String _trimDecimal(double v) {
+    if (v == v.truncateToDouble()) return v.toStringAsFixed(0);
+    var s = v.toStringAsFixed(6);
+    s = s.replaceFirst(RegExp(r'0+$'), '');
+    s = s.replaceFirst(RegExp(r'\.$'), '');
+    return s;
+  }
+
   /// Sửa số tiền/điểm của 1 mã đã nhập — không cho xóa, chỉ cho sửa,
   /// và bắt buộc phải xác nhận nghiêm túc trước khi lưu vì ảnh hưởng tiền của khách.
   Future<void> _editOrder(BuildContext context, Order order) async {
     final isTypeA = order.type == "A";
 
     final controller = TextEditingController(
-      text: isTypeA ? order.amount.toStringAsFixed(0) : order.unit.toString(),
+      text: isTypeA ? _trimDecimal(order.amount) : order.unit.toString(),
     );
 
     final newValue = await showDialog<double>(
